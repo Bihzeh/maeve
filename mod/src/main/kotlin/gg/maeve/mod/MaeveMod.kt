@@ -1,7 +1,6 @@
 package gg.maeve.mod
 
 import gg.maeve.mod.config.Config
-import gg.maeve.mod.cosmetics.LocalStubCosmeticsClient
 import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.module.hud.CoordsModule
 import gg.maeve.mod.module.hud.FpsModule
@@ -32,8 +31,7 @@ class MaeveMod : ClientModInitializer {
         val hud = HudRenderController(modules)
         bridge.installHud { canvas, ctx -> hud.draw(canvas, ctx) }
 
-        @Suppress("UNUSED_VARIABLE")
-        val cosmetics = LocalStubCosmeticsClient() // Phase 3: HttpCosmeticsClient
+        // Cosmetics: Phase 3 wires HttpCosmeticsClient + the player-render mixin.
 
         val menu = ModMenuController(modules)
         bridge.installMenuKeybind { bridge.openModMenu(menu) }

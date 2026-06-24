@@ -5,6 +5,7 @@ import gg.maeve.mod.module.Module
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -27,6 +28,10 @@ private data class ConfigData(
 /**
  * Schema-versioned per-module config persisted as JSON under the given dir
  * (at runtime: .minecraft/config/maeve/config.json).
+ *
+ * Saves are synchronous: the file is small and only written on a toggle (a user
+ * action, never per frame), so a background writer would add complexity (and race
+ * the tests) for no real benefit. I/O failures are logged, never thrown.
  */
 class Config(private val dir: Path) {
     private val file: Path = dir.resolve("config.json")
@@ -34,9 +39,9 @@ class Config(private val dir: Path) {
     private var data: ConfigData = ConfigData()
 
     fun load() {
-        if (file.exists()) {
-            runCatching { data = json.decodeFromString<ConfigData>(file.readText()) }
-        }
+        if (!file.exists()) return
+        runCatching { data = json.decodeFromString<ConfigData>(file.readText()) }
+            .onFailure { LOG.warn("Maeve: config parse failed, using defaults", it) }
     }
 
     /** Restore persisted state onto a freshly registered module. */
@@ -58,7 +63,13 @@ class Config(private val dir: Path) {
     }
 
     fun save() {
-        Files.createDirectories(dir)
-        file.writeText(json.encodeToString(data))
+        runCatching {
+            Files.createDirectories(dir)
+            file.writeText(json.encodeToString(data))
+        }.onFailure { LOG.error("Maeve: failed to save config", it) }
+    }
+
+    private companion object {
+        private val LOG = LoggerFactory.getLogger("Maeve")
     }
 }

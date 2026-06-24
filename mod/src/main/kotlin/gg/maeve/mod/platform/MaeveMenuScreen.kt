@@ -28,6 +28,7 @@ class MaeveMenuScreen(
         super.extractRenderState(extractor, mouseX, mouseY, deltaTicks)
         val font = Minecraft.getInstance().font
         val rows = controller.rows()
+        if (selected >= rows.size) selected = maxOf(0, rows.size - 1)
 
         extractor.text(font, "Maeve", 20, 16, WHITE, true)
         rows.forEachIndexed { i, row ->

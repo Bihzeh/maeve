@@ -5,7 +5,11 @@
   "name": "Maeve",
   "description": "Server-legal performance + quality-of-life client: HUD, mod menu, cosmetics.",
   "authors": ["Maeve"],
-  "contact": { "homepage": "https://maeve.gg" },
+  "contact": {
+    "homepage": "https://github.com/Bihzeh/maeve",
+    "sources": "https://github.com/Bihzeh/maeve",
+    "issues": "https://github.com/Bihzeh/maeve/issues"
+  },
   "license": "LicenseRef-Maeve-Proprietary",
   "environment": "client",
   "entrypoints": {

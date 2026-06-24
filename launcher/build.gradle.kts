@@ -42,6 +42,26 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
 sourceSets.named("main") { resources.srcDir(generatedVersionDir) }
 tasks.named("processResources") { dependsOn(generateBuildInfo) }
 
+// Bundle the Maeve Fabric mod jar into the launcher's own resources so INSTALLED
+// launchers ship our mod (not just the dev-only mod/build/libs path). The :mod jar is
+// copied under a version-agnostic name; at runtime ModProvisioner extracts it from the
+// classpath resource bundled-mods/maeve.jar into the game's mods/ folder. It is opaque
+// bytes on the resource path — NOT on the launcher's compile/runtime classpath — so the
+// mod's Minecraft/Fabric classes never leak into the launcher JVM. (Loom runs in no-remap
+// mode here, so `jar` — not `remapJar` — is the loadable artifact; it carries JiJ includes.)
+// srcDir is the resource ROOT, so copy into a bundled-mods/ subdir under it to get the
+// classpath resource path bundled-mods/maeve.jar (not a root-level maeve.jar).
+val bundledModResDir = layout.buildDirectory.dir("generated/bundled-mod-resources")
+val copyBundledModJar = tasks.register<Copy>("copyBundledModJar") {
+    // from(archiveFile) carries the implicit task dependency on :mod:jar and tracks the
+    // exact jar as an input, so the copy reruns when (and only when) the mod jar changes.
+    from(project(":mod").tasks.named<Jar>("jar").flatMap { it.archiveFile })
+    into(bundledModResDir.map { it.dir("bundled-mods") })
+    rename { "maeve.jar" }
+}
+sourceSets.named("main") { resources.srcDir(bundledModResDir) }
+tasks.named("processResources") { dependsOn(copyBundledModJar) }
+
 compose.desktop {
     application {
         mainClass = "gg.maeve.launcher.MainKt"

@@ -20,7 +20,10 @@ dependencies {
     implementation(libs.fabric.api)
     implementation(libs.fabric.language.kotlin)
 
-    // Shared cosmetics protocol + version constants (bundled via JiJ in Phase 1).
+    // Shared cosmetics protocol + version constants. include() JiJ-nests shared.jar
+    // inside the mod jar so the Fabric classloader can load gg.maeve.shared.* at runtime
+    // (Phase 3 cosmetics reference it); implementation() gives compile-time visibility.
+    include(project(":shared"))
     implementation(project(":shared"))
 
     testImplementation(kotlin("test"))

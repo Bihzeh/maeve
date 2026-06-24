@@ -1,5 +1,6 @@
 package gg.maeve.launcher.game
 
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 
@@ -41,5 +42,19 @@ class MaevePaths(val root: Path) {
             }
             return MaevePaths(base)
         }
+    }
+}
+
+/**
+ * Newest non-sources jar in a dev `mod/build/libs` directory, or null if the directory is
+ * absent or empty. Picks the most recently modified jar so a stale older-version jar left
+ * in the directory is never chosen.
+ */
+internal fun findDevModJar(dir: Path): Path? {
+    if (!Files.isDirectory(dir)) return null
+    return Files.list(dir).use { stream ->
+        stream.filter { val n = it.fileName.toString(); n.endsWith(".jar") && !n.contains("sources") }
+            .max(compareBy { Files.getLastModifiedTime(it) })
+            .orElse(null)
     }
 }

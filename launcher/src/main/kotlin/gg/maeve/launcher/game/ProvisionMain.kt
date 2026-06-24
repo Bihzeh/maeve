@@ -14,7 +14,9 @@ import java.util.concurrent.TimeUnit
  */
 fun main() = runBlocking {
     val paths = MaevePaths(Path.of(System.getProperty("user.home"), ".maeve-test"))
-    val modJar = Path.of("mod/build/libs/mod-0.0.1-SNAPSHOT.jar")
+    // Prefer a freshly built mod jar (version-agnostic) when present; otherwise pass
+    // null so the chain exercises the bundled-resource path that shipped launchers use.
+    val modJar = findDevModJar(Path.of("mod/build/libs"))
     val systemJava = Path.of(System.getProperty("java.home"), "bin", "java")
     val lines = Collections.synchronizedList(mutableListOf<String>())
 

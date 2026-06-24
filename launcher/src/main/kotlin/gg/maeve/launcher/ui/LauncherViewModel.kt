@@ -13,6 +13,7 @@ import gg.maeve.launcher.auth.MsaDeviceCodeAuth
 import gg.maeve.launcher.game.GameSession
 import gg.maeve.launcher.game.Launcher
 import gg.maeve.launcher.game.MaevePaths
+import gg.maeve.launcher.game.findDevModJar
 import gg.maeve.launcher.update.BuildInfo
 import gg.maeve.launcher.update.UpdateService
 import gg.maeve.launcher.update.UpdateState
@@ -21,7 +22,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.awt.Desktop
 import java.net.URI
-import java.nio.file.Files
 import java.nio.file.Path
 import javax.swing.SwingUtilities
 
@@ -118,6 +118,11 @@ class LauncherViewModel(private val scope: CoroutineScope) {
             runCatching {
                 val proc = Launcher().launch(
                     session = s,
+                    // Identical in dev and public builds (decoupled from BuildInfo.isDev /
+                    // auth state): use a freshly built mod/build/libs jar when present — only
+                    // happens when run from the repo — otherwise the bundled resource that
+                    // ModProvisioner extracts (bundled-mods/maeve.jar). Every installed build
+                    // ships and installs the mod regardless of which workflow produced it.
                     localMaeveMod = defaultMaeveMod(),
                     maxMemoryMb = maxMemoryMb,
                     enabledMods = enabled,
@@ -140,13 +145,7 @@ class LauncherViewModel(private val scope: CoroutineScope) {
         return if (total > 0) (a.toFloatOrNull() ?: 0f) / total else null
     }
 
-    private fun defaultMaeveMod(): Path? {
-        val dir = Path.of("mod/build/libs")
-        if (!Files.isDirectory(dir)) return null
-        return Files.list(dir).use { st ->
-            st.filter { val n = it.fileName.toString(); n.endsWith(".jar") && !n.contains("sources") }.findFirst().orElse(null)
-        }
-    }
+    private fun defaultMaeveMod(): Path? = findDevModJar(Path.of("mod/build/libs"))
 
     private fun openBrowser(uri: String) = runCatching {
         val u = URI(uri)

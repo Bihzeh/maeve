@@ -69,6 +69,10 @@ reach, kill aura, auto-clicker, X-ray, hitbox extenders, anti-knockback.
 
 ## Build / run
 - `./gradlew :mod:build` → `mod/build/libs/mod-<v>.jar`.
-- Launcher injects it into the game profile (currently dev-sources from the local build path —
-  **bundling the mod into the launcher distribution is an open task**).
+- Launcher injects it into the game profile. The launcher distribution **bundles the mod**
+  (`launcher/build.gradle.kts` `copyBundledModJar` → classpath resource `bundled-mods/maeve.jar`);
+  at runtime `ModProvisioner` extracts it into the instance's `mods/`. Both the public and
+  dev (`-Pmaeve.dev=true`) workflows embed and install the mod identically — decoupled from
+  `BuildInfo.isDev`. A freshly built `mod/build/libs` jar is only preferred when the launcher
+  is run from the repo (`./gradlew :launcher:run`).
 - `./gradlew :launcher:provisionTest` launches headless and confirms Fabric loads `maeve`.

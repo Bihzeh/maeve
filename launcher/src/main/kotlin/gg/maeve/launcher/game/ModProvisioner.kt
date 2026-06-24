@@ -1,7 +1,9 @@
 package gg.maeve.launcher.game
 
 import kotlinx.serialization.Serializable
+import java.io.InputStream
 import java.net.URLEncoder
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -21,8 +23,8 @@ data class ModrinthVersion(val id: String = "", val files: List<MrFile> = emptyL
 
 /**
  * Places the bundled performance/QoL mods into the instance's mods/ folder via the
- * Modrinth API (Fabric API, Fabric Language Kotlin, Sodium, Lithium) plus the local
- * Maeve mod jar (dev). Downloads are verified against Modrinth's sha1 + size.
+ * Modrinth API (Fabric API, Fabric Language Kotlin, Sodium, Lithium) plus the Maeve
+ * mod itself. Downloads are verified against Modrinth's sha1 + size.
  */
 class ModProvisioner(private val net: Net, private val paths: MaevePaths) {
 
@@ -41,10 +43,18 @@ class ModProvisioner(private val net: Net, private val paths: MaevePaths) {
             val file = latestFabricFile(slug, mcVersion)
             net.download(file.url, modsDir.resolve(file.filename), sha1 = file.hashes.sha1, size = file.size)
         }
-        localMaeveMod?.takeIf { it.exists() }?.let {
-            Files.copy(it, modsDir.resolve("maeve.jar"), StandardCopyOption.REPLACE_EXISTING)
-            onStatus("Mod: maeve (local)")
-        }
+        // Maeve is the core product mod — always installed (NOT gated by enabledMods,
+        // unlike the toggleable BUNDLED performance mods above). Dev builds may pass a
+        // freshly built jar; shipped launchers extract the jar bundled into the
+        // distribution. A missing bundle degrades to "no Maeve mod" with a visible
+        // status rather than blocking the launch.
+        val installed = installMaeveMod(
+            modsDir,
+            localMaeveMod,
+            openBundled = { bundledModStream(BUNDLED_MOD_RESOURCE) },
+            onStatus = onStatus,
+        )
+        if (!installed) onStatus("Maeve mod unavailable — not bundled in this build")
     }
 
     private suspend fun latestFabricFile(slug: String, mc: String): ModrinthVersion.MrFile {
@@ -60,5 +70,65 @@ class ModProvisioner(private val net: Net, private val paths: MaevePaths) {
 
     private companion object {
         val BUNDLED = listOf("fabric-api", "fabric-language-kotlin", "sodium", "lithium")
+        const val BUNDLED_MOD_RESOURCE = "bundled-mods/maeve.jar"
+    }
+}
+
+/**
+ * Opens a classpath resource, trying the loaders most likely to see a resource bundled
+ * into the launcher distribution first: this module's own loader (the resource ships in
+ * the same jar as [ModProvisioner]), then the thread context loader, then the system
+ * loader. Returns the first hit, or null if no loader can see it.
+ */
+internal fun bundledModStream(resource: String): InputStream? {
+    val loaders = listOfNotNull(
+        ModProvisioner::class.java.classLoader,
+        Thread.currentThread().contextClassLoader,
+        ClassLoader.getSystemClassLoader(),
+    )
+    for (loader in loaders) loader.getResourceAsStream(resource)?.let { return it }
+    return null
+}
+
+/**
+ * Installs the Maeve mod into [modsDir] as maeve.jar. Prefers an explicit [localOverride]
+ * jar (dev fast-iteration on a freshly built mod/build/libs jar); otherwise extracts the
+ * jar bundled into the launcher distribution (opened by [openBundled]). Writes via a temp
+ * sibling + atomic move so a kill mid-write never leaves a truncated jar. Returns true if
+ * a jar was installed, false if neither source was available.
+ */
+internal fun installMaeveMod(
+    modsDir: Path,
+    localOverride: Path?,
+    openBundled: () -> InputStream?,
+    onStatus: (String) -> Unit = {},
+): Boolean {
+    val target = modsDir.resolve("maeve.jar")
+    if (localOverride != null && localOverride.exists()) {
+        atomicReplace(target) { tmp -> Files.copy(localOverride, tmp, StandardCopyOption.REPLACE_EXISTING) }
+        onStatus("Mod: maeve (local)")
+        return true
+    }
+    val stream = openBundled() ?: return false
+    stream.use { s -> atomicReplace(target) { tmp -> Files.copy(s, tmp, StandardCopyOption.REPLACE_EXISTING) } }
+    onStatus("Mod: maeve")
+    return true
+}
+
+/**
+ * Runs [write] against a temp file in [target]'s directory, then moves it onto [target]
+ * atomically (falling back to a plain replace where ATOMIC_MOVE is unsupported).
+ */
+private fun atomicReplace(target: Path, write: (Path) -> Unit) {
+    val tmp = Files.createTempFile(target.parent, "maeve", ".tmp")
+    try {
+        write(tmp)
+        try {
+            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        } catch (e: AtomicMoveNotSupportedException) {
+            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING)
+        }
+    } finally {
+        Files.deleteIfExists(tmp)
     }
 }

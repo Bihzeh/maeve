@@ -140,3 +140,15 @@ Organize deliverables so a solo dev can implement incrementally (tokens + compon
 - **Position as a legitimate, server-legal client** — never imply cheats, hacks, or anything that gets users banned.
 - **Don't make it heavy** — no design choices that bloat RAM/CPU or slow startup. The launcher must embody "performance."
 - Keep brand suggestions as **starting points**; the user expects Design to explore and refine, not rubber-stamp section 4.
+
+---
+
+## 11. Locked decisions (answers to Design's clarifying questions, June 2026)
+
+1. **Brand mood:** Twilight Royal — dark indigo/near-black base, refined violet accent, restrained gold; dark-mode default (refine the exact palette).
+2. **Primary deliverable:** Both, weighted to the **system** — tokens + components first, then key screens (solo dev implements incrementally in Compose).
+3. **Screens to fully design now (MVP four):** Sign-in (all states), Home/Play (+ download/launch progress), Settings (RAM/Java, Advanced collapsible), Mods/Performance. Cosmetics (P3) + Friends/Party pane (P4): reserve space, lighter touch, later.
+4. **Variations:** a couple of palette/accent variations only; no Home-layout variants yet.
+5. **Per-screen states:** full state matrix for Sign-in + Home/Play; happy-path for the rest.
+6. **Wordmark:** wordmark + a simple abstract mark (crown/diamond motif, kept abstract); type-based wordmark at minimum.
+7. **Typography:** regal display + clean UI — refined, slightly high-contrast display for the 'Maeve' wordmark + headings; clean geometric sans for body/UI.

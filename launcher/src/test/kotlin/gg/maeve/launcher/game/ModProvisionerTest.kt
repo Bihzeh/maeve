@@ -94,4 +94,29 @@ class ModProvisionerTest {
     fun `findDevModJar returns null for a missing directory`(@TempDir dir: Path) {
         assertNull(findDevModJar(dir.resolve("does-not-exist")))
     }
+
+    @Test
+    fun `selectBundledMods always installs required deps even when toggles exclude them`() {
+        // Regression: the UI passes only {sodium, lithium}; fabric-api + fabric-language-kotlin
+        // are REQUIRED deps of the Maeve mod and must install or Fabric aborts with
+        // "requires fabric-api / fabric-language-kotlin, which is missing".
+        assertEquals(
+            listOf("fabric-api", "fabric-language-kotlin", "sodium", "lithium"),
+            selectBundledMods(setOf("sodium", "lithium")),
+        )
+        assertEquals(listOf("fabric-api", "fabric-language-kotlin"), selectBundledMods(emptySet()))
+    }
+
+    @Test
+    fun `selectBundledMods with null installs all bundled mods`() {
+        assertEquals(
+            listOf("fabric-api", "fabric-language-kotlin", "sodium", "lithium"),
+            selectBundledMods(null),
+        )
+    }
+
+    @Test
+    fun `selectBundledMods honors a single optional toggle but keeps required deps`() {
+        assertEquals(listOf("fabric-api", "fabric-language-kotlin", "sodium"), selectBundledMods(setOf("sodium")))
+    }
 }

@@ -37,7 +37,7 @@ class ModProvisioner(private val net: Net, private val paths: MaevePaths) {
     ) {
         val modsDir = paths.mods(instanceId)
         Files.createDirectories(modsDir)
-        val slugs = if (enabledMods == null) BUNDLED else BUNDLED.filter { it in enabledMods }
+        val slugs = selectBundledMods(enabledMods)
         for (slug in slugs) {
             onStatus("Mod: $slug")
             val file = latestFabricFile(slug, mcVersion)
@@ -69,10 +69,22 @@ class ModProvisioner(private val net: Net, private val paths: MaevePaths) {
     }
 
     private companion object {
-        val BUNDLED = listOf("fabric-api", "fabric-language-kotlin", "sodium", "lithium")
         const val BUNDLED_MOD_RESOURCE = "bundled-mods/maeve.jar"
     }
 }
+
+/**
+ * Bundled mods placed into the instance's mods/ folder. fabric-api and fabric-language-kotlin
+ * are REQUIRED runtime dependencies of the Maeve mod, so they install unconditionally; the
+ * performance mods are user-toggleable. [enabledMods] null installs every optional mod;
+ * otherwise only those present in the set. Required mods are never filtered out — dropping
+ * them makes Fabric abort the launch with a missing-dependency error.
+ */
+internal val REQUIRED_MODS = listOf("fabric-api", "fabric-language-kotlin")
+internal val OPTIONAL_MODS = listOf("sodium", "lithium")
+
+internal fun selectBundledMods(enabledMods: Set<String>?): List<String> =
+    REQUIRED_MODS + (if (enabledMods == null) OPTIONAL_MODS else OPTIONAL_MODS.filter { it in enabledMods })
 
 /**
  * Opens a classpath resource, trying the loaders most likely to see a resource bundled

@@ -18,6 +18,8 @@ data class GameContext(
     val yaw: Float = 0f,
     val dayTime: Long = 0L,
     val speed: Double = 0.0,
+    val leftCps: Int = 0,
+    val rightCps: Int = 0,
 )
 
 /**

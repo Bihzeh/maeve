@@ -5,6 +5,7 @@ import gg.maeve.mod.module.FontModule
 import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.module.hud.ClockModule
 import gg.maeve.mod.module.hud.CoordsModule
+import gg.maeve.mod.module.hud.CpsModule
 import gg.maeve.mod.module.hud.DayModule
 import gg.maeve.mod.module.hud.DirectionModule
 import gg.maeve.mod.module.hud.FpsModule
@@ -37,6 +38,7 @@ class MaeveMod : ClientModInitializer {
         modules.register(DayModule())
         modules.register(ClockModule())
         modules.register(SpeedModule())
+        modules.register(CpsModule())
 
         val hud = HudRenderController(modules)
         bridge.installHud { canvas, ctx -> hud.draw(canvas, ctx) }

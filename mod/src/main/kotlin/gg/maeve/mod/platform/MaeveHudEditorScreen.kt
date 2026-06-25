@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.KeyEvent
+import net.minecraft.client.input.CharacterEvent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
@@ -54,8 +55,12 @@ class MaeveHudEditorScreen(
 
     override fun keyPressed(event: KeyEvent): Boolean {
         if (event.key() == GLFW.GLFW_KEY_ESCAPE) { onClose(); return true }
+        if (event.key() == GLFW.GLFW_KEY_BACKSPACE && state.onBackspace(modules)) return true
         return super.keyPressed(event)
     }
+
+    override fun charTyped(event: CharacterEvent): Boolean =
+        state.onCharTyped(event.codepoint().toChar(), modules) || super.charTyped(event)
 
     override fun onClose() {
         modules.saveAll()

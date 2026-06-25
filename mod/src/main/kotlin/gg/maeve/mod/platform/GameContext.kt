@@ -51,6 +51,8 @@ interface HudCanvas {
 interface EditorCanvas : HudCanvas {
     /** Draw a 1px rectangle outline. */
     fun border(x: Int, y: Int, w: Int, h: Int, color: Int)
+    /** Vertical gradient fill: [top] color at y, [bottom] color at y+h. */
+    fun gradientV(x: Int, y: Int, w: Int, h: Int, top: Int, bottom: Int)
     /** Raise the draw z-layer so editor overlays sit above the HUD preview. */
     fun overlayStratum()
 }

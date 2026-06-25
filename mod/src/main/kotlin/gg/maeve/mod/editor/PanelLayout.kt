@@ -6,14 +6,16 @@ import gg.maeve.shared.MaevePalette
 data class Control(val id: String, val rect: Rect)
 
 /**
- * Lays out the editor's selection panel (right edge). Both the renderer (draw) and the
- * state machine (hit-test) call [controls] so they never drift. Pure. The swatch row gives
- * one-click recoloring; the full HSV picker is a later polish pass.
+ * Lays out the editor's selection panel (right edge). Both the renderer (draw) and the state
+ * machine (hit-test) call [controls] so they never drift. Pure. Includes a full HSV picker
+ * (SV square + hue/alpha bars + hex field + preview) plus preset swatches and style toggles.
  */
 object PanelLayout {
     const val WIDTH = 150
     const val TOP = 0
     private const val PAD = 8
+    const val SV = 80   // SV square side
+    const val BAR = 10  // hue / alpha bar width
 
     /** Preset colors: launcher palette plus a few vivid Minecraft-friendly tones. */
     val SWATCHES = intArrayOf(
@@ -26,22 +28,29 @@ object PanelLayout {
     fun controls(panelLeft: Int, panelTop: Int): List<Control> {
         val l = panelLeft + PAD
         val w = WIDTH - PAD * 2
-        var y = panelTop + 22
         val out = mutableListOf<Control>()
-        for (id in TOGGLES) { out += Control(id, Rect(l, y, w, 14)); y += 18 }
-        out += Control("scale-", Rect(l, y, 22, 14))
-        out += Control("scale+", Rect(l + w - 22, y, 22, 14))
+        var y = panelTop + 8
+        out += Control("preview", Rect(l + w - 30, y, 30, 12))
         y += 18
-        val sw = 14; val gap = 4; val perRow = 5
+        out += Control("sv", Rect(l, y, SV, SV))
+        out += Control("hue", Rect(l + SV + 4, y, BAR, SV))
+        out += Control("alpha", Rect(l + SV + 4 + BAR + 2, y, BAR, SV))
+        y += SV + 6
+        out += Control("hex", Rect(l, y, w, 12))
+        y += 16
+        val sw = 13; val gap = 4; val perRow = 5
         SWATCHES.forEachIndexed { i, _ ->
             val col = i % perRow; val r = i / perRow
             out += Control("swatch:$i", Rect(l + col * (sw + gap), y + r * (sw + gap), sw, sw))
         }
-        y += ((SWATCHES.size + perRow - 1) / perRow) * (sw + gap) + 6
-        out += Control("reset", Rect(l, y, w, 14))
+        y += ((SWATCHES.size + perRow - 1) / perRow) * (sw + gap) + 4
+        for (id in TOGGLES) { out += Control(id, Rect(l, y, w, 13)); y += 16 }
+        out += Control("scale-", Rect(l, y, 22, 13))
+        out += Control("scale+", Rect(l + w - 22, y, 22, 13))
+        y += 16
+        out += Control("reset", Rect(l, y, w, 13))
         return out
     }
 
-    /** The full panel rectangle, for drawing the background and bounding clicks. */
     fun panelRect(screenW: Int, screenH: Int): Rect = Rect(screenW - WIDTH, TOP, WIDTH, screenH)
 }

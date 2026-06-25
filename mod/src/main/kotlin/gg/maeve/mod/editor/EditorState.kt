@@ -1,13 +1,15 @@
 package gg.maeve.mod.editor
 
+import gg.maeve.mod.config.HexColor
 import gg.maeve.mod.module.ModuleManager
+import kotlin.math.roundToInt
 
 /**
- * Pure, immediate-mode editor interaction state. Drives the editor screen from raw mouse
- * events without any Minecraft types, so it is fully unit-testable. The drag footprint is
- * captured on press so a mid-drag text-size change (e.g. coords updating) can't make the
- * clamp range invert or the element jump. Control mutations go through ModuleManager
- * setters (live preview); the screen persists once on close.
+ * Pure, immediate-mode editor interaction state. Drives the editor screen from raw mouse/char
+ * events without any Minecraft types, so it is fully unit-testable. Holds the live HSVA being
+ * edited for the selected element's color (the SV square / hue / alpha bars / hex field all
+ * read and write it); control mutations go through ModuleManager setters (live preview), and
+ * the screen persists once on close.
  */
 class EditorState {
     var selectedId: String? = null
@@ -23,15 +25,39 @@ class EditorState {
     private var dragW = 0
     private var dragH = 0
 
-    /** Returns true if the press was consumed. Order: panel controls (if selected), else element. */
+    // color editor state
+    private var editH = 0f
+    private var editS = 0f
+    private var editV = 0f
+    private var editA = 255
+    private var activeColor: String? = null // "sv" | "hue" | "alpha" while dragging a picker
+    private var hexFocused = false
+    private var hexBuffer = ""
+
+    val colorH get() = editH
+    val colorS get() = editS
+    val colorV get() = editV
+    val colorA get() = editA
+    val isHexFocused get() = hexFocused
+    val hexText get() = hexBuffer
+
     fun onPress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, boxes: List<ElementBox>, modules: ModuleManager): Boolean {
         if (selectedId != null && mouseX >= screenW - PanelLayout.WIDTH) {
             val ctrl = PanelLayout.controls(screenW - PanelLayout.WIDTH, PanelLayout.TOP)
                 .firstOrNull { it.rect.contains(mouseX, mouseY) }
-            if (ctrl != null) return applyControl(ctrl.id, modules)
-            return true // inside the panel but not on a control: consume, keep selection
+            if (ctrl == null) { hexFocused = false; return true }
+            when {
+                ctrl.id == "sv" || ctrl.id == "hue" || ctrl.id == "alpha" -> {
+                    activeColor = ctrl.id; hexFocused = false
+                    setPickerValue(ctrl.id, ctrl.rect, mouseX, mouseY); applyEditColor(modules)
+                }
+                ctrl.id == "hex" -> { hexFocused = true; hexBuffer = "" }
+                else -> { hexFocused = false; applyControl(ctrl.id, modules); loadColor(modules) }
+            }
+            return true
         }
         val id = hitTest(boxes, mouseX, mouseY)
+        val previous = selectedId
         selectedId = id
         if (id == null) { dragId = null; return false }
         val box = boxes.first { it.id == id }.rect
@@ -39,14 +65,17 @@ class EditorState {
         startMouseX = mouseX; startMouseY = mouseY
         startLeft = box.left; startTop = box.top
         dragW = box.width; dragH = box.height
+        if (id != previous) loadColor(modules)
         return true
     }
 
-    /** Drag the selected element; re-anchors live so it stays put on release. Returns true if dragging. */
     fun onDrag(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, modules: ModuleManager): Boolean {
+        activeColor?.let { ac ->
+            val rect = PanelLayout.controls(screenW - PanelLayout.WIDTH, PanelLayout.TOP).first { it.id == ac }.rect
+            setPickerValue(ac, rect, mouseX, mouseY); applyEditColor(modules)
+            return true
+        }
         val id = dragId ?: return false
-        // coerceAtLeast(0) so an element larger than the viewport pins to (0,0) instead of
-        // inverting the clamp range (which would throw IllegalArgumentException).
         val maxLeft = (screenW - dragW).coerceAtLeast(0)
         val maxTop = (screenH - dragH).coerceAtLeast(0)
         val left = (startLeft + (mouseX - startMouseX)).coerceIn(0, maxLeft)
@@ -60,16 +89,63 @@ class EditorState {
     }
 
     fun onRelease(): Boolean {
-        val was = dragId != null
+        val was = dragId != null || activeColor != null
         dragId = null
+        activeColor = null
         return was
     }
 
-    /** Clears the selection (and any drag) if the selected element no longer has a box — e.g.
-     *  its module stopped rendering — so the panel never shows for an absent element. */
+    /** Hex field input. Returns true if the editor consumed the char. */
+    fun onCharTyped(ch: Char, modules: ModuleManager): Boolean {
+        if (!hexFocused) return false
+        if (hexBuffer.length < 8 && (ch in '0'..'9' || ch in 'a'..'f' || ch in 'A'..'F')) {
+            hexBuffer += ch.uppercaseChar(); tryApplyHex(modules)
+        }
+        return true
+    }
+
+    fun onBackspace(modules: ModuleManager): Boolean {
+        if (!hexFocused) return false
+        if (hexBuffer.isNotEmpty()) { hexBuffer = hexBuffer.dropLast(1); tryApplyHex(modules) }
+        return true
+    }
+
     fun pruneSelection(boxes: List<ElementBox>) {
         val sel = selectedId ?: return
-        if (boxes.none { it.id == sel }) { selectedId = null; dragId = null }
+        if (boxes.none { it.id == sel }) { selectedId = null; dragId = null; activeColor = null }
+    }
+
+    private fun setPickerValue(id: String, r: Rect, mx: Int, my: Int) {
+        val fx = ((mx - r.left).toFloat() / r.width).coerceIn(0f, 1f)
+        val fy = ((my - r.top).toFloat() / r.height).coerceIn(0f, 1f)
+        when (id) {
+            "sv" -> { editS = fx; editV = 1f - fy }
+            "hue" -> editH = fy * 360f
+            "alpha" -> editA = ((1f - fy) * 255f).roundToInt()
+        }
+    }
+
+    private fun applyEditColor(modules: ModuleManager) {
+        val sel = selectedId ?: return
+        val color = MaeveColor.argb(editA, MaeveColor.hsvToRgb(editH, editS, editV))
+        modules.updateStyle(sel) { it.copy(color = color) }
+        dirty = true
+    }
+
+    private fun loadColor(modules: ModuleManager) {
+        val c = selectedId?.let { modules.hudById(it)?.style?.color } ?: return
+        val (h, s, v) = MaeveColor.rgbToHsv(MaeveColor.rgbOf(c))
+        editH = h; editS = s; editV = v; editA = MaeveColor.alphaOf(c)
+        hexFocused = false; hexBuffer = ""
+    }
+
+    private fun tryApplyHex(modules: ModuleManager) {
+        val argb = HexColor.decode(hexBuffer) ?: return
+        val sel = selectedId ?: return
+        modules.updateStyle(sel) { it.copy(color = argb) }
+        dirty = true
+        val (h, s, v) = MaeveColor.rgbToHsv(MaeveColor.rgbOf(argb))
+        editH = h; editS = s; editV = v; editA = MaeveColor.alphaOf(argb)
     }
 
     private fun applyControl(id: String, modules: ModuleManager): Boolean {

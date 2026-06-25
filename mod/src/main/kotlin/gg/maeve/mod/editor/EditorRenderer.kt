@@ -1,5 +1,6 @@
 package gg.maeve.mod.editor
 
+import gg.maeve.mod.config.HexColor
 import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.platform.EditorCanvas
 import gg.maeve.mod.platform.GameContext
@@ -7,9 +8,10 @@ import gg.maeve.mod.render.HudModuleRender
 import gg.maeve.shared.MaevePalette
 
 /** Draws the HUD editor: live preview of all elements, hover/selection outlines, and the
- *  selection panel. Pure orchestration over [EditorCanvas]; no Minecraft types. */
+ *  selection panel with a full HSV colour picker. Pure orchestration over [EditorCanvas]. */
 class EditorRenderer {
     private val white = 0xFFFFFFFF.toInt()
+    private val black = 0xFF000000.toInt()
 
     fun render(
         canvas: EditorCanvas, screenW: Int, screenH: Int, mouseX: Int, mouseY: Int,
@@ -20,12 +22,9 @@ class EditorRenderer {
             override val lineHeight get() = canvas.lineHeight
         }
         val all = modules.hudModules()
-
-        // 1) preview every module (disabled ones too, so they can be positioned)
         for (m in all) HudModuleRender.draw(canvas, m, m.render(ctx))
         canvas.overlayStratum()
 
-        // 2) outlines: selected = gold, hover = white, disabled = red, else faint
         val boxes = ElementLayout.boxesFor(all, ctx, measurer, screenW, screenH)
         state.pruneSelection(boxes)
         val hover = hitTest(boxes, mouseX, mouseY)
@@ -41,10 +40,10 @@ class EditorRenderer {
         }
 
         canvas.drawText(6, 6, "HUD Editor  -  drag to move, click to select, Esc to save", MaevePalette.text)
-        state.selectedId?.let { drawPanel(canvas, it, screenW, screenH, modules) }
+        state.selectedId?.let { drawPanel(canvas, it, screenW, screenH, modules, state) }
     }
 
-    private fun drawPanel(canvas: EditorCanvas, sel: String, screenW: Int, screenH: Int, modules: ModuleManager) {
+    private fun drawPanel(canvas: EditorCanvas, sel: String, screenW: Int, screenH: Int, modules: ModuleManager, state: EditorState) {
         val module = modules.hudById(sel) ?: return
         val st = module.style
         val pr = PanelLayout.panelRect(screenW, screenH)
@@ -52,36 +51,101 @@ class EditorRenderer {
         canvas.border(pr.left, pr.top, pr.width, pr.height, MaevePalette.outline)
         canvas.drawText(pr.left + 8, pr.top + 8, module.displayName, MaevePalette.gold)
 
-        for (c in PanelLayout.controls(pr.left, PanelLayout.TOP)) {
+        val controls = PanelLayout.controls(pr.left, PanelLayout.TOP).associateBy { it.id }
+        controls["preview"]?.rect?.let { r ->
+            checker(canvas, r.left, r.top, r.width, r.height)
+            canvas.fill(r.left, r.top, r.width, r.height, st.color)
+            canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
+        }
+        controls["sv"]?.rect?.let { r -> drawSvSquare(canvas, r, state) }
+        controls["hue"]?.rect?.let { r -> drawHueBar(canvas, r, state) }
+        controls["alpha"]?.rect?.let { r -> drawAlphaBar(canvas, r, state) }
+        controls["hex"]?.rect?.let { r ->
+            canvas.fill(r.left, r.top, r.width, r.height, MaevePalette.elevated)
+            canvas.border(r.left, r.top, r.width, r.height, if (state.isHexFocused) MaevePalette.gold else MaevePalette.outline)
+            val text = if (state.isHexFocused) "#" + state.hexText + "_" else HexColor.encode(st.color)
+            canvas.drawText(r.left + 3, r.top + 2, text, MaevePalette.text)
+        }
+
+        for ((id, c) in controls) {
             val r = c.rect
             when {
-                c.id in PanelLayout.TOGGLES -> {
-                    val on = when (c.id) {
+                id in PanelLayout.TOGGLES -> {
+                    val on = when (id) {
                         "visible" -> module.enabled; "bold" -> st.bold; "italic" -> st.italic
                         "underline" -> st.underline; "strike" -> st.strikethrough; "shadow" -> st.shadow
                         "background" -> st.background; else -> false
                     }
                     canvas.fill(r.left, r.top, r.width, r.height, if (on) MaevePalette.primary else MaevePalette.elevated)
                     canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
-                    canvas.drawText(r.left + 4, r.top + 3, label(c.id), white)
+                    canvas.drawText(r.left + 4, r.top + 3, label(id), white)
                 }
-                c.id == "scale-" || c.id == "scale+" -> {
+                id == "scale-" || id == "scale+" -> {
                     canvas.fill(r.left, r.top, r.width, r.height, MaevePalette.elevated)
                     canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
-                    canvas.drawText(r.left + 7, r.top + 3, if (c.id == "scale-") "-" else "+", white)
-                    if (c.id == "scale+") canvas.drawText(pr.left + 34, r.top + 3, "x%.2f".format(st.scale), MaevePalette.text2)
+                    canvas.drawText(r.left + 7, r.top + 3, if (id == "scale-") "-" else "+", white)
+                    if (id == "scale+") canvas.drawText(pr.left + 34, r.top + 3, "x%.2f".format(st.scale), MaevePalette.text2)
                 }
-                c.id == "reset" -> {
+                id == "reset" -> {
                     canvas.fill(r.left, r.top, r.width, r.height, MaevePalette.elevated)
                     canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
                     canvas.drawText(r.left + 4, r.top + 3, "Reset style", white)
                 }
-                c.id.startsWith("swatch:") -> {
-                    val idx = c.id.removePrefix("swatch:").toInt()
-                    canvas.fill(r.left, r.top, r.width, r.height, 0xFF000000.toInt() or MaeveColor.rgbOf(PanelLayout.SWATCHES[idx]))
+                id.startsWith("swatch:") -> {
+                    val idx = id.removePrefix("swatch:").toInt()
+                    canvas.fill(r.left, r.top, r.width, r.height, black or MaeveColor.rgbOf(PanelLayout.SWATCHES[idx]))
                     canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
                 }
             }
+        }
+    }
+
+    private fun drawSvSquare(canvas: EditorCanvas, r: Rect, state: EditorState) {
+        // exact: for fixed (h,s), rgb(h,s,v) = v * rgb(h,s,1), so each column is a gradient to black
+        for (x in 0 until r.width) {
+            val s = x.toFloat() / r.width
+            val top = black or MaeveColor.hsvToRgb(state.colorH, s, 1f)
+            canvas.gradientV(r.left + x, r.top, 1, r.height, top, black)
+        }
+        val mx = r.left + (state.colorS * r.width).toInt()
+        val my = r.top + ((1f - state.colorV) * r.height).toInt()
+        canvas.border(mx - 2, my - 2, 4, 4, white)
+        canvas.border(mx - 3, my - 3, 6, 6, black)
+    }
+
+    private fun drawHueBar(canvas: EditorCanvas, r: Rect, state: EditorState) {
+        val seg = r.height / 6
+        for (i in 0 until 6) {
+            val top = black or MaeveColor.hsvToRgb(i * 60f, 1f, 1f)
+            val bottom = black or MaeveColor.hsvToRgb((i + 1) * 60f, 1f, 1f)
+            canvas.gradientV(r.left, r.top + i * seg, r.width, seg, top, bottom)
+        }
+        val my = r.top + (state.colorH / 360f * r.height).toInt()
+        canvas.border(r.left - 1, my - 1, r.width + 2, 3, white)
+    }
+
+    private fun drawAlphaBar(canvas: EditorCanvas, r: Rect, state: EditorState) {
+        checker(canvas, r.left, r.top, r.width, r.height)
+        val rgb = MaeveColor.hsvToRgb(state.colorH, state.colorS, state.colorV)
+        canvas.gradientV(r.left, r.top, r.width, r.height, black or rgb, rgb) // bottom alpha 0
+        canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
+        val my = r.top + ((1f - state.colorA / 255f) * r.height).toInt()
+        canvas.border(r.left - 1, my - 1, r.width + 2, 3, white)
+    }
+
+    private fun checker(canvas: EditorCanvas, x: Int, y: Int, w: Int, h: Int) {
+        canvas.fill(x, y, w, h, 0xFFBBBBBB.toInt())
+        val s = 4
+        var yy = 0
+        while (yy < h) {
+            var xx = 0
+            while (xx < w) {
+                if (((xx / s) + (yy / s)) % 2 == 0) {
+                    canvas.fill(x + xx, y + yy, minOf(s, w - xx), minOf(s, h - yy), 0xFF777777.toInt())
+                }
+                xx += s
+            }
+            yy += s
         }
     }
 

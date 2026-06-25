@@ -139,6 +139,10 @@ internal class EditorExtractorCanvas(
         extractor.outline(x, y, w, h, color)
     }
 
+    override fun gradientV(x: Int, y: Int, w: Int, h: Int, top: Int, bottom: Int) {
+        extractor.fillGradient(x, y, x + w, y + h, top, bottom)
+    }
+
     override fun overlayStratum() {
         extractor.nextStratum()
     }

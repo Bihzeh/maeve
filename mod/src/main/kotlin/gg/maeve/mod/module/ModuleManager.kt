@@ -16,6 +16,9 @@ class ModuleManager(private val config: Config) {
     private val hudList = ArrayList<HudModule>() // cached so the render hot path allocates nothing
     private val hudView: List<HudModule> = Collections.unmodifiableList(hudList) // read-only view, zero per-call alloc
 
+    /** Fired after any enabled toggle (any path) so the bridge can apply side effects (e.g. font reload). */
+    var onEnabledChanged: ((id: String, enabled: Boolean) -> Unit)? = null
+
     fun register(module: Module) {
         require(!modules.containsKey(module.id)) { "Duplicate module id: ${module.id}" }
         modules[module.id] = module
@@ -37,12 +40,13 @@ class ModuleManager(private val config: Config) {
             it.enabled = !it.enabled
             config.snapshot(modules.values)
             config.save()
+            onEnabledChanged?.invoke(id, it.enabled)
         }
     }
 
     // --- editor write-through setters (mutate-only; the editor persists once via saveAll) ---
 
-    fun setEnabled(id: String, value: Boolean) { modules[id]?.enabled = value }
+    fun setEnabled(id: String, value: Boolean) { modules[id]?.let { it.enabled = value; onEnabledChanged?.invoke(id, value) } }
 
     fun setAnchorOffset(id: String, anchor: HudAnchor, offsetX: Int, offsetY: Int) {
         (modules[id] as? HudModule)?.let { it.anchor = anchor; it.offsetX = offsetX; it.offsetY = offsetY }

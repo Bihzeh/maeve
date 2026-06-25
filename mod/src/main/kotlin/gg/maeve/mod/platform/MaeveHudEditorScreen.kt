@@ -44,8 +44,11 @@ class MaeveHudEditorScreen(
         renderer.render(canvas, width, height, mouseX, mouseY, sampleCtx(), modules, state)
     }
 
-    override fun mouseClicked(event: MouseButtonEvent, doubled: Boolean): Boolean =
-        state.onPress(event.x().toInt(), event.y().toInt(), width, height, boxes(), modules) || super.mouseClicked(event, doubled)
+    override fun mouseClicked(event: MouseButtonEvent, doubled: Boolean): Boolean {
+        val handled = state.onPress(event.x().toInt(), event.y().toInt(), width, height, boxes(), modules)
+        if (state.closeRequested) { onClose(); return true }
+        return handled || super.mouseClicked(event, doubled)
+    }
 
     override fun mouseDragged(event: MouseButtonEvent, dragX: Double, dragY: Double): Boolean =
         state.onDrag(event.x().toInt(), event.y().toInt(), width, height, modules) || super.mouseDragged(event, dragX, dragY)

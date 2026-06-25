@@ -39,8 +39,10 @@ class EditorRenderer {
             canvas.border(b.rect.left - 1, b.rect.top - 1, b.rect.width + 2, b.rect.height + 2, color)
         }
 
-        canvas.drawText(6, 6, "HUD Editor  -  drag to move, click to select, Esc to save", MaevePalette.text)
+        canvas.drawText(6, 6, "Drag to move · click to select · Esc/Done to save", MaevePalette.text)
+        drawButtons(canvas, screenW, state)
         state.selectedId?.let { drawPanel(canvas, it, screenW, screenH, modules, state) }
+        if (state.browserOpen) drawBrowser(canvas, screenW, modules)
     }
 
     private fun drawPanel(canvas: EditorCanvas, sel: String, screenW: Int, screenH: Int, modules: ModuleManager, state: EditorState) {
@@ -148,6 +150,37 @@ class EditorRenderer {
                 xx += s
             }
             yy += s
+        }
+    }
+
+    private fun drawButtons(canvas: EditorCanvas, screenW: Int, state: EditorState) {
+        button(canvas, ModuleBrowserLayout.modulesButton(screenW), "Modules", state.browserOpen)
+        button(canvas, ModuleBrowserLayout.doneButton(screenW), "Done", false)
+    }
+
+    private fun button(canvas: EditorCanvas, r: Rect, text: String, active: Boolean) {
+        canvas.fill(r.left, r.top, r.width, r.height, if (active) MaevePalette.primary else MaevePalette.elevated)
+        canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
+        canvas.drawText(r.left + 6, r.top + 4, text, white)
+    }
+
+    private fun drawBrowser(canvas: EditorCanvas, screenW: Int, modules: ModuleManager) {
+        val mods = modules.all().toList()
+        val panel = ModuleBrowserLayout.panelRect(screenW, mods.size)
+        canvas.fill(panel.left, panel.top, panel.width, panel.height, MaevePalette.surface)
+        canvas.border(panel.left, panel.top, panel.width, panel.height, MaevePalette.gold)
+        canvas.drawText(panel.left + 8, panel.top + 5, "Modules", MaevePalette.gold)
+        val rows = ModuleBrowserLayout.rows(screenW, mods.map { it.id })
+        for (i in mods.indices) {
+            val m = mods[i]; val r = rows[i].second
+            canvas.fill(r.left, r.top, r.width, r.height, MaevePalette.elevated)
+            canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
+            canvas.drawText(r.left + 6, r.top + 4, m.displayName, white)
+            val pillW = 34
+            val px = r.right - pillW - 4
+            canvas.fill(px, r.top + 2, pillW, r.height - 4, if (m.enabled) MaevePalette.primary else MaevePalette.surface)
+            canvas.border(px, r.top + 2, pillW, r.height - 4, MaevePalette.outline)
+            canvas.drawText(px + 6, r.top + 4, if (m.enabled) "ON" else "OFF", white)
         }
     }
 

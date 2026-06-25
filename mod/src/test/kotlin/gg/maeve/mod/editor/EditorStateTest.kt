@@ -139,4 +139,33 @@ class EditorStateTest {
         s.onCharTyped('A', mgr); s.onCharTyped('B', mgr) // only 2 chars -> no apply
         assertEquals(before, fpsColor(mgr))
     }
+
+    @Test fun `modules button opens and closes the browser`() {
+        val (mgr, _, s) = setup()
+        val b = ModuleBrowserLayout.modulesButton(800)
+        s.onPress(b.left + b.width / 2, b.top + b.height / 2, 800, 600, emptyList(), mgr)
+        assertTrue(s.browserOpen)
+        s.onPress(b.left + b.width / 2, b.top + b.height / 2, 800, 600, emptyList(), mgr)
+        assertFalse(s.browserOpen)
+    }
+
+    @Test fun `browser row toggles the module, fires the hook, and selects a HUD module`() {
+        val (mgr, boxes, s) = setup()
+        val seen = mutableListOf<Pair<String, Boolean>>()
+        mgr.onEnabledChanged = { id, en -> seen.add(id to en) }
+        s.onPress(ModuleBrowserLayout.modulesButton(800).left + 1, 7, 800, 600, boxes, mgr) // open
+        val row = ModuleBrowserLayout.rows(800, mgr.all().map { it.id }).first { it.first == "fps" }.second
+        s.onPress(row.left + 1, row.top + 1, 800, 600, boxes, mgr)                          // toggle fps off
+        assertFalse(mgr.hudById("fps")!!.enabled)
+        assertEquals(listOf("fps" to false), seen)
+        assertEquals("fps", s.selectedId)
+        assertFalse(s.browserOpen)
+    }
+
+    @Test fun `done button requests close`() {
+        val (mgr, _, s) = setup()
+        val d = ModuleBrowserLayout.doneButton(800)
+        s.onPress(d.left + 1, d.top + 1, 800, 600, emptyList(), mgr)
+        assertTrue(s.closeRequested)
+    }
 }

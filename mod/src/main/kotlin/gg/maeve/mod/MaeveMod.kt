@@ -14,7 +14,6 @@ import gg.maeve.mod.module.hud.SpeedModule
 import gg.maeve.mod.platform.FabricMinecraftBridge
 import gg.maeve.mod.platform.MinecraftBridge
 import gg.maeve.mod.render.HudRenderController
-import gg.maeve.mod.ui.ModMenuController
 import net.fabricmc.api.ClientModInitializer
 
 /**
@@ -43,10 +42,11 @@ class MaeveMod : ClientModInitializer {
         val hud = HudRenderController(modules)
         bridge.installHud { canvas, ctx -> hud.draw(canvas, ctx) }
 
-        // Cosmetics: Phase 3 wires HttpCosmeticsClient + the player-render mixin.
+        // Toggling any module (from the editor's module browser, etc.) reloads the font pack when needed.
+        modules.onEnabledChanged = { id, enabled -> if (id == "font") bridge.setCustomFont(enabled) }
 
-        val menu = ModMenuController(modules) { id, enabled -> if (id == "font") bridge.setCustomFont(enabled) }
-        bridge.installMenuKeybind { bridge.openModMenu(menu) }
+        // Right-Shift opens the HUD editor directly (its "Modules" button browses/toggles everything).
+        bridge.installMenuKeybind { bridge.openHudEditor(modules) }
 
         // Apply the persisted font choice after the first client tick (never reload during init).
         bridge.applyCustomFontOnStartup(modules.byId("font")?.enabled ?: true)

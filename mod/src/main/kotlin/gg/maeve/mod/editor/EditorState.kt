@@ -1,6 +1,7 @@
 package gg.maeve.mod.editor
 
 import gg.maeve.mod.config.HexColor
+import gg.maeve.mod.module.HudModule
 import gg.maeve.mod.module.ModuleManager
 import kotlin.math.roundToInt
 
@@ -15,6 +16,10 @@ class EditorState {
     var selectedId: String? = null
         private set
     var dirty: Boolean = false
+        private set
+    var browserOpen: Boolean = false
+        private set
+    var closeRequested: Boolean = false
         private set
 
     private var dragId: String? = null
@@ -41,6 +46,9 @@ class EditorState {
     val hexText get() = hexBuffer
 
     fun onPress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, boxes: List<ElementBox>, modules: ModuleManager): Boolean {
+        if (ModuleBrowserLayout.doneButton(screenW).contains(mouseX, mouseY)) { closeRequested = true; return true }
+        if (ModuleBrowserLayout.modulesButton(screenW).contains(mouseX, mouseY)) { browserOpen = !browserOpen; return true }
+        if (browserOpen) return onBrowserPress(mouseX, mouseY, screenW, modules)
         if (selectedId != null && mouseX >= screenW - PanelLayout.WIDTH) {
             val ctrl = PanelLayout.controls(screenW - PanelLayout.WIDTH, PanelLayout.TOP)
                 .firstOrNull { it.rect.contains(mouseX, mouseY) }
@@ -111,6 +119,20 @@ class EditorState {
     fun pruneSelection(boxes: List<ElementBox>) {
         val sel = selectedId ?: return
         if (boxes.none { it.id == sel }) { selectedId = null; dragId = null; activeColor = null }
+    }
+
+    private fun onBrowserPress(mouseX: Int, mouseY: Int, screenW: Int, modules: ModuleManager): Boolean {
+        val ids = modules.all().map { it.id }
+        val row = ModuleBrowserLayout.rows(screenW, ids).firstOrNull { it.second.contains(mouseX, mouseY) }
+        if (row != null) {
+            val module = modules.byId(row.first) ?: return true
+            modules.setEnabled(row.first, !module.enabled)
+            dirty = true
+            if (module is HudModule) { selectedId = row.first; loadColor(modules); browserOpen = false }
+            return true
+        }
+        if (!ModuleBrowserLayout.panelRect(screenW, ids.size).contains(mouseX, mouseY)) browserOpen = false
+        return true
     }
 
     private fun setPickerValue(id: String, r: Rect, mx: Int, my: Int) {

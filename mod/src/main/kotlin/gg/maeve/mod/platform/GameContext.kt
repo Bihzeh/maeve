@@ -18,11 +18,38 @@ data class GameContext(
 )
 
 /**
- * Minimal text-drawing surface backed by the Minecraft DrawContext at runtime.
- * Modules draw through this so the renderer can be swapped/tested.
+ * Render-time text attributes passed from the controller to the canvas (no Minecraft types).
+ * Note: Minecraft's text renderer uses an RGB-only color, so the alpha channel of [color] is
+ * ignored on styled text — use a background panel ([HudStyle.background]) for translucency.
+ */
+data class TextRun(
+    val color: Int,
+    val bold: Boolean = false,
+    val italic: Boolean = false,
+    val underline: Boolean = false,
+    val strikethrough: Boolean = false,
+    val shadow: Boolean = true,
+)
+
+/**
+ * Minimal drawing surface backed by the Minecraft retained-mode extractor at runtime.
+ * Modules and the renderer draw through this so the logic can be swapped/tested.
  */
 interface HudCanvas {
     fun drawText(x: Int, y: Int, text: String, color: Int)
+
+    /** Draw text with full styling (bold/italic/underline/strikethrough/shadow). */
+    fun drawStyledText(x: Int, y: Int, text: String, run: TextRun)
+
+    /** Fill a rectangle [x],[y] of size [w]x[h] with an ARGB [color]. */
+    fun fill(x: Int, y: Int, w: Int, h: Int, color: Int)
+
+    /** Run [body] with the canvas origin translated to ([pivotX],[pivotY]) and uniformly
+     *  scaled by [scale]; body draws in element-local coordinates. */
+    fun withScale(scale: Float, pivotX: Int, pivotY: Int, body: () -> Unit)
+
     fun textWidth(text: String): Int
     val lineHeight: Int
+    val screenWidth: Int
+    val screenHeight: Int
 }

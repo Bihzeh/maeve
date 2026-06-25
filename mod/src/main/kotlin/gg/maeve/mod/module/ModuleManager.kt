@@ -1,6 +1,7 @@
 package gg.maeve.mod.module
 
 import gg.maeve.mod.config.Config
+import java.util.Collections
 
 /**
  * Owns the registry of modules and bridges them to the config layer.
@@ -13,6 +14,7 @@ import gg.maeve.mod.config.Config
 class ModuleManager(private val config: Config) {
     private val modules = LinkedHashMap<String, Module>()
     private val hudList = ArrayList<HudModule>() // cached so the render hot path allocates nothing
+    private val hudView: List<HudModule> = Collections.unmodifiableList(hudList) // read-only view, zero per-call alloc
 
     fun register(module: Module) {
         require(!modules.containsKey(module.id)) { "Duplicate module id: ${module.id}" }
@@ -25,7 +27,10 @@ class ModuleManager(private val config: Config) {
     fun all(): Collection<Module> = modules.values
 
     /** Returns the cached HUD list directly (read-only use): no per-frame allocation. */
-    fun hudModules(): List<HudModule> = hudList
+    fun hudModules(): List<HudModule> = hudView
+
+    fun byId(id: String): Module? = modules[id]
+    fun hudById(id: String): HudModule? = modules[id] as? HudModule
 
     fun toggle(id: String) {
         modules[id]?.let {
@@ -33,6 +38,22 @@ class ModuleManager(private val config: Config) {
             config.snapshot(modules.values)
             config.save()
         }
+    }
+
+    // --- editor write-through setters (mutate-only; the editor persists once via saveAll) ---
+
+    fun setEnabled(id: String, value: Boolean) { modules[id]?.enabled = value }
+
+    fun setAnchorOffset(id: String, anchor: HudAnchor, offsetX: Int, offsetY: Int) {
+        (modules[id] as? HudModule)?.let { it.anchor = anchor; it.offsetX = offsetX; it.offsetY = offsetY }
+    }
+
+    fun updateStyle(id: String, transform: (HudStyle) -> HudStyle) {
+        (modules[id] as? HudModule)?.let { it.style = transform(it.style) }
+    }
+
+    fun resetStyle(id: String) {
+        (modules[id] as? HudModule)?.let { it.style = it.defaultStyle }
     }
 
     fun saveAll() {

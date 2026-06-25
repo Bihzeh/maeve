@@ -11,6 +11,8 @@ import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.Style
 import net.minecraft.resources.Identifier
 import org.lwjgl.glfw.GLFW
 import java.nio.file.Path
@@ -81,7 +83,37 @@ class FabricMinecraftBridge : MinecraftBridge {
             extractor.text(font, text, x, y, color, true) // dropShadow = true
         }
 
+        override fun drawStyledText(x: Int, y: Int, text: String, run: TextRun) {
+            val style = Style.EMPTY
+                .withColor(run.color and 0xFFFFFF)
+                .withBold(run.bold)
+                .withItalic(run.italic)
+                .withUnderlined(run.underline)
+                .withStrikethrough(run.strikethrough)
+            // RGB on the Style + full color arg as fallback. MC's text color is RGB-only, so
+            // text alpha is not honored here (background panels carry translucency instead).
+            extractor.text(font, Component.literal(text).setStyle(style), x, y, run.color, run.shadow)
+        }
+
+        override fun fill(x: Int, y: Int, w: Int, h: Int, color: Int) {
+            extractor.fill(x, y, x + w, y + h, color)
+        }
+
+        override fun withScale(scale: Float, pivotX: Int, pivotY: Int, body: () -> Unit) {
+            val pose = extractor.pose()
+            pose.pushMatrix()
+            pose.translate(pivotX.toFloat(), pivotY.toFloat())
+            if (scale != 1.0f) pose.scale(scale, scale)
+            try {
+                body()
+            } finally {
+                pose.popMatrix()
+            }
+        }
+
         override fun textWidth(text: String): Int = font.width(text)
         override val lineHeight: Int get() = font.lineHeight
+        override val screenWidth: Int get() = extractor.guiWidth()
+        override val screenHeight: Int get() = extractor.guiHeight()
     }
 }

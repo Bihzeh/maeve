@@ -142,7 +142,7 @@ class EditorStateTest {
 
     @Test fun `modules button opens and closes the browser`() {
         val (mgr, _, s) = setup()
-        val b = ModuleBrowserLayout.modulesButton(800)
+        val b = ModuleBrowserLayout.modulesButton(800, 600)
         s.onPress(b.left + b.width / 2, b.top + b.height / 2, 800, 600, emptyList(), mgr)
         assertTrue(s.browserOpen)
         s.onPress(b.left + b.width / 2, b.top + b.height / 2, 800, 600, emptyList(), mgr)
@@ -153,7 +153,7 @@ class EditorStateTest {
         val (mgr, boxes, s) = setup()
         val seen = mutableListOf<Pair<String, Boolean>>()
         mgr.onEnabledChanged = { id, en -> seen.add(id to en) }
-        s.onPress(ModuleBrowserLayout.modulesButton(800).left + 1, 7, 800, 600, boxes, mgr) // open
+        val mb0 = ModuleBrowserLayout.modulesButton(800, 600); s.onPress(mb0.left + 1, mb0.top + 1, 800, 600, boxes, mgr) // open
         val row = ModuleBrowserLayout.rows(800, mgr.all().map { it.id }).first { it.first == "fps" }.second
         s.onPress(row.left + 1, row.top + 1, 800, 600, boxes, mgr)                          // toggle fps off
         assertFalse(mgr.hudById("fps")!!.enabled)
@@ -164,7 +164,7 @@ class EditorStateTest {
 
     @Test fun `done button requests close`() {
         val (mgr, _, s) = setup()
-        val d = ModuleBrowserLayout.doneButton(800)
+        val d = ModuleBrowserLayout.doneButton(800, 600)
         s.onPress(d.left + 1, d.top + 1, 800, 600, emptyList(), mgr)
         assertTrue(s.closeRequested)
     }

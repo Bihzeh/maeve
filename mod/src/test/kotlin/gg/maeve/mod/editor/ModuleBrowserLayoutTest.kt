@@ -6,8 +6,8 @@ import kotlin.test.assertTrue
 
 class ModuleBrowserLayoutTest {
     @Test fun `buttons are present and disjoint`() {
-        val modules = ModuleBrowserLayout.modulesButton(800)
-        val done = ModuleBrowserLayout.doneButton(800)
+        val modules = ModuleBrowserLayout.modulesButton(800, 600)
+        val done = ModuleBrowserLayout.doneButton(800, 600)
         assertTrue(modules.width > 0 && done.width > 0)
         assertTrue(done.left > modules.right, "Done sits right of Modules")
     }

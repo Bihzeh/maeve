@@ -40,7 +40,7 @@ class EditorRenderer {
         }
 
         canvas.drawText(6, 6, "Drag to move · click to select · Esc/Done to save", MaevePalette.text)
-        drawButtons(canvas, screenW, state)
+        drawButtons(canvas, screenW, screenH, state)
         state.selectedId?.let { drawPanel(canvas, it, screenW, screenH, modules, state) }
         if (state.browserOpen) drawBrowser(canvas, screenW, modules)
     }
@@ -153,9 +153,9 @@ class EditorRenderer {
         }
     }
 
-    private fun drawButtons(canvas: EditorCanvas, screenW: Int, state: EditorState) {
-        button(canvas, ModuleBrowserLayout.modulesButton(screenW), "Modules", state.browserOpen)
-        button(canvas, ModuleBrowserLayout.doneButton(screenW), "Done", false)
+    private fun drawButtons(canvas: EditorCanvas, screenW: Int, screenH: Int, state: EditorState) {
+        button(canvas, ModuleBrowserLayout.modulesButton(screenW, screenH), "Modules", state.browserOpen)
+        button(canvas, ModuleBrowserLayout.doneButton(screenW, screenH), "Done", false)
     }
 
     private fun button(canvas: EditorCanvas, r: Rect, text: String, active: Boolean) {

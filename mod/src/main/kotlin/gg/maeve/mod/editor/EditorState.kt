@@ -46,8 +46,8 @@ class EditorState {
     val hexText get() = hexBuffer
 
     fun onPress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, boxes: List<ElementBox>, modules: ModuleManager): Boolean {
-        if (ModuleBrowserLayout.doneButton(screenW).contains(mouseX, mouseY)) { closeRequested = true; return true }
-        if (ModuleBrowserLayout.modulesButton(screenW).contains(mouseX, mouseY)) { browserOpen = !browserOpen; return true }
+        if (ModuleBrowserLayout.doneButton(screenW, screenH).contains(mouseX, mouseY)) { closeRequested = true; return true }
+        if (ModuleBrowserLayout.modulesButton(screenW, screenH).contains(mouseX, mouseY)) { browserOpen = !browserOpen; return true }
         if (browserOpen) return onBrowserPress(mouseX, mouseY, screenW, modules)
         if (selectedId != null && mouseX >= screenW - PanelLayout.WIDTH) {
             val ctrl = PanelLayout.controls(screenW - PanelLayout.WIDTH, PanelLayout.TOP)
@@ -84,7 +84,7 @@ class EditorState {
         }
         val id = dragId ?: return false
         val maxLeft = (screenW - dragW).coerceAtLeast(0)
-        val maxTop = (screenH - dragH).coerceAtLeast(0)
+        val maxTop = (screenH - 24 - dragH).coerceAtLeast(0) // keep elements above the bottom button bar
         val left = (startLeft + (mouseX - startMouseX)).coerceIn(0, maxLeft)
         val top = (startTop + (mouseY - startMouseY)).coerceIn(0, maxTop)
         val moved = Rect(left, top, dragW, dragH)
@@ -131,8 +131,9 @@ class EditorState {
             if (module is HudModule) { selectedId = row.first; loadColor(modules); browserOpen = false }
             return true
         }
-        if (!ModuleBrowserLayout.panelRect(screenW, ids.size).contains(mouseX, mouseY)) browserOpen = false
-        return true
+        if (ModuleBrowserLayout.panelRect(screenW, ids.size).contains(mouseX, mouseY)) return true // inside panel, not on a row
+        browserOpen = false
+        return false // click-away: close the browser and let the click select/drag the element under it
     }
 
     private fun setPickerValue(id: String, r: Rect, mx: Int, my: Int) {

@@ -12,7 +12,7 @@ data class Control(val id: String, val rect: Rect)
  */
 object PanelLayout {
     const val WIDTH = 150
-    const val TOP = 26 // below the editor's top button bar
+    const val TOP = 0
     private const val PAD = 8
     const val SV = 80   // SV square side
     const val BAR = 10  // hue / alpha bar width
@@ -52,5 +52,5 @@ object PanelLayout {
         return out
     }
 
-    fun panelRect(screenW: Int, screenH: Int): Rect = Rect(screenW - WIDTH, TOP, WIDTH, screenH - TOP)
+    fun panelRect(screenW: Int, screenH: Int): Rect = Rect(screenW - WIDTH, TOP, WIDTH, screenH - 24) // leave the bottom bar clear
 }

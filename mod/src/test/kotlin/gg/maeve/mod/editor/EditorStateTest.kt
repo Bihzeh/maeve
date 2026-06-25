@@ -122,6 +122,16 @@ class EditorStateTest {
         assertEquals(0xFF00FF00.toInt(), fpsColor(mgr))
     }
 
+    @Test fun `6-digit hex keeps the element's current alpha`() {
+        val (mgr, boxes, s) = setup(); selectFps(s, boxes, mgr)
+        val a = control("alpha"); s.onPress(a.left + 1, a.top + a.height - 1, 800, 600, boxes, mgr) // alpha ~ 0
+        assertTrue(MaeveColor.alphaOf(fpsColor(mgr)) < 10)
+        val hex = control("hex"); s.onPress(hex.left + 2, hex.top + 2, 800, 600, boxes, mgr)
+        "112233".forEach { s.onCharTyped(it, mgr) }
+        assertEquals(0x112233, MaeveColor.rgbOf(fpsColor(mgr)))
+        assertTrue(MaeveColor.alphaOf(fpsColor(mgr)) < 10, "alpha preserved on 6-digit hex")
+    }
+
     @Test fun `hex field ignores an incomplete code`() {
         val (mgr, boxes, s) = setup(); selectFps(s, boxes, mgr)
         val before = fpsColor(mgr)

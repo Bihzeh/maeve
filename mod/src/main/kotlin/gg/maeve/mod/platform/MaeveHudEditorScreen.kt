@@ -59,8 +59,10 @@ class MaeveHudEditorScreen(
         return super.keyPressed(event)
     }
 
-    override fun charTyped(event: CharacterEvent): Boolean =
-        state.onCharTyped(event.codepoint().toChar(), modules) || super.charTyped(event)
+    override fun charTyped(event: CharacterEvent): Boolean {
+        if (event.codepoint() > 0xFFFF) return super.charTyped(event) // hex digits are all BMP
+        return state.onCharTyped(event.codepoint().toChar(), modules) || super.charTyped(event)
+    }
 
     override fun onClose() {
         modules.saveAll()

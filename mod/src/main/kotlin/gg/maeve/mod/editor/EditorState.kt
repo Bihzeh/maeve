@@ -7,9 +7,9 @@ import kotlin.math.roundToInt
 /**
  * Pure, immediate-mode editor interaction state. Drives the editor screen from raw mouse/char
  * events without any Minecraft types, so it is fully unit-testable. Holds the live HSVA being
- * edited for the selected element's color (the SV square / hue / alpha bars / hex field all
- * read and write it); control mutations go through ModuleManager setters (live preview), and
- * the screen persists once on close.
+ * edited for the selected element's color; the SV square / hue / alpha bars / hex field all
+ * read and write it. Control mutations go through ModuleManager setters (live preview); the
+ * screen persists once on close.
  */
 class EditorState {
     var selectedId: String? = null
@@ -25,7 +25,6 @@ class EditorState {
     private var dragW = 0
     private var dragH = 0
 
-    // color editor state
     private var editH = 0f
     private var editS = 0f
     private var editV = 0f
@@ -45,14 +44,14 @@ class EditorState {
         if (selectedId != null && mouseX >= screenW - PanelLayout.WIDTH) {
             val ctrl = PanelLayout.controls(screenW - PanelLayout.WIDTH, PanelLayout.TOP)
                 .firstOrNull { it.rect.contains(mouseX, mouseY) }
-            if (ctrl == null) { hexFocused = false; return true }
+            if (ctrl == null) { hexFocused = false; activeColor = null; return true }
             when {
-                ctrl.id == "sv" || ctrl.id == "hue" || ctrl.id == "alpha" -> {
+                ctrl.id in PICKERS -> {
                     activeColor = ctrl.id; hexFocused = false
                     setPickerValue(ctrl.id, ctrl.rect, mouseX, mouseY); applyEditColor(modules)
                 }
-                ctrl.id == "hex" -> { hexFocused = true; hexBuffer = "" }
-                else -> { hexFocused = false; applyControl(ctrl.id, modules); loadColor(modules) }
+                ctrl.id == "hex" -> { activeColor = null; hexFocused = true; hexBuffer = "" }
+                else -> { activeColor = null; hexFocused = false; applyControl(ctrl.id, modules); loadColor(modules) }
             }
             return true
         }
@@ -95,7 +94,6 @@ class EditorState {
         return was
     }
 
-    /** Hex field input. Returns true if the editor consumed the char. */
     fun onCharTyped(ch: Char, modules: ModuleManager): Boolean {
         if (!hexFocused) return false
         if (hexBuffer.length < 8 && (ch in '0'..'9' || ch in 'a'..'f' || ch in 'A'..'F')) {
@@ -140,8 +138,10 @@ class EditorState {
     }
 
     private fun tryApplyHex(modules: ModuleManager) {
-        val argb = HexColor.decode(hexBuffer) ?: return
+        val parsed = HexColor.decode(hexBuffer) ?: return
         val sel = selectedId ?: return
+        // 6-digit codes keep the element's current alpha; 8-digit codes set alpha explicitly.
+        val argb = if (hexBuffer.length == 6) MaeveColor.argb(editA, MaeveColor.rgbOf(parsed)) else parsed
         modules.updateStyle(sel) { it.copy(color = argb) }
         dirty = true
         val (h, s, v) = MaeveColor.rgbToHsv(MaeveColor.rgbOf(argb))
@@ -171,5 +171,9 @@ class EditorState {
         }
         dirty = true
         return true
+    }
+
+    private companion object {
+        val PICKERS = setOf("sv", "hue", "alpha")
     }
 }

@@ -102,25 +102,27 @@ class EditorRenderer {
 
     private fun drawSvSquare(canvas: EditorCanvas, r: Rect, state: EditorState) {
         // exact: for fixed (h,s), rgb(h,s,v) = v * rgb(h,s,1), so each column is a gradient to black
+        val denom = (r.width - 1).coerceAtLeast(1)
         for (x in 0 until r.width) {
-            val s = x.toFloat() / r.width
+            val s = x.toFloat() / denom
             val top = black or MaeveColor.hsvToRgb(state.colorH, s, 1f)
             canvas.gradientV(r.left + x, r.top, 1, r.height, top, black)
         }
-        val mx = r.left + (state.colorS * r.width).toInt()
-        val my = r.top + ((1f - state.colorV) * r.height).toInt()
+        val mx = (r.left + (state.colorS * r.width).toInt()).coerceIn(r.left, r.right - 1)
+        val my = (r.top + ((1f - state.colorV) * r.height).toInt()).coerceIn(r.top, r.bottom - 1)
         canvas.border(mx - 2, my - 2, 4, 4, white)
         canvas.border(mx - 3, my - 3, 6, 6, black)
     }
 
     private fun drawHueBar(canvas: EditorCanvas, r: Rect, state: EditorState) {
-        val seg = r.height / 6
         for (i in 0 until 6) {
+            val y0 = r.top + i * r.height / 6        // boundary-based so the remainder never leaves a gap
+            val y1 = r.top + (i + 1) * r.height / 6
             val top = black or MaeveColor.hsvToRgb(i * 60f, 1f, 1f)
             val bottom = black or MaeveColor.hsvToRgb((i + 1) * 60f, 1f, 1f)
-            canvas.gradientV(r.left, r.top + i * seg, r.width, seg, top, bottom)
+            canvas.gradientV(r.left, y0, r.width, y1 - y0, top, bottom)
         }
-        val my = r.top + (state.colorH / 360f * r.height).toInt()
+        val my = (r.top + (state.colorH / 360f * r.height).toInt()).coerceIn(r.top, r.bottom - 1)
         canvas.border(r.left - 1, my - 1, r.width + 2, 3, white)
     }
 
@@ -129,7 +131,7 @@ class EditorRenderer {
         val rgb = MaeveColor.hsvToRgb(state.colorH, state.colorS, state.colorV)
         canvas.gradientV(r.left, r.top, r.width, r.height, black or rgb, rgb) // bottom alpha 0
         canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
-        val my = r.top + ((1f - state.colorA / 255f) * r.height).toInt()
+        val my = (r.top + ((1f - state.colorA / 255f) * r.height).toInt()).coerceIn(r.top, r.bottom - 1)
         canvas.border(r.left - 1, my - 1, r.width + 2, 3, white)
     }
 

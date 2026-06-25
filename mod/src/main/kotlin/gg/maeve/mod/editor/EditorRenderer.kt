@@ -27,6 +27,7 @@ class EditorRenderer {
 
         // 2) outlines: selected = gold, hover = white, disabled = red, else faint
         val boxes = ElementLayout.boxesFor(all, ctx, measurer, screenW, screenH)
+        state.pruneSelection(boxes)
         val hover = hitTest(boxes, mouseX, mouseY)
         for (b in boxes) {
             val enabled = modules.hudById(b.id)?.enabled ?: true

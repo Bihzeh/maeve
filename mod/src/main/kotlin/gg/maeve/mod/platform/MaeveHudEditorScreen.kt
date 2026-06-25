@@ -47,7 +47,7 @@ class MaeveHudEditorScreen(
         state.onPress(event.x().toInt(), event.y().toInt(), width, height, boxes(), modules) || super.mouseClicked(event, doubled)
 
     override fun mouseDragged(event: MouseButtonEvent, dragX: Double, dragY: Double): Boolean =
-        state.onDrag(event.x().toInt(), event.y().toInt(), width, height, boxes(), modules) || super.mouseDragged(event, dragX, dragY)
+        state.onDrag(event.x().toInt(), event.y().toInt(), width, height, modules) || super.mouseDragged(event, dragX, dragY)
 
     override fun mouseReleased(event: MouseButtonEvent): Boolean =
         state.onRelease() || super.mouseReleased(event)

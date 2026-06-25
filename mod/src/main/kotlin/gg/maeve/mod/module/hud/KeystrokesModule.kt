@@ -6,7 +6,8 @@ import gg.maeve.mod.module.HudModule
 import gg.maeve.mod.module.HudStyle
 import gg.maeve.mod.platform.GameContext
 
-/** Simple WASD keystroke display. A graphical key grid lands in a later phase. */
+/** Simple WASD keystroke display. Pressed keys show as [W]; the color follows the module
+ *  style, so it themes and recolors with the rest of the HUD. A graphical key grid is later. */
 class KeystrokesModule : HudModule {
     override val id = "keystrokes"
     override val displayName = "Keystrokes"
@@ -18,10 +19,9 @@ class KeystrokesModule : HudModule {
 
     override fun render(ctx: GameContext): List<HudLine> {
         fun mark(down: Boolean, c: String) = if (down) "[$c]" else " $c "
-        val on = 0xFFFFFFFF.toInt() // explicit per-line color overrides the module style color
         return listOf(
-            HudLine("  ${mark(ctx.keyForward, "W")}  ", on),
-            HudLine("${mark(ctx.keyLeft, "A")}${mark(ctx.keyBack, "S")}${mark(ctx.keyRight, "D")}", on),
+            HudLine("  ${mark(ctx.keyForward, "W")}  "),
+            HudLine("${mark(ctx.keyLeft, "A")}${mark(ctx.keyBack, "S")}${mark(ctx.keyRight, "D")}"),
         )
     }
 }

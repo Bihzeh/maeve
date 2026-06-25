@@ -1,5 +1,6 @@
 package gg.maeve.mod.platform
 
+import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.ui.ModMenuController
 import com.mojang.blaze3d.platform.InputConstants
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -54,7 +55,11 @@ class FabricMinecraftBridge : MinecraftBridge {
     }
 
     override fun openModMenu(controller: ModMenuController) {
-        Minecraft.getInstance().setScreenAndShow(MaeveMenuScreen(controller))
+        Minecraft.getInstance().setScreenAndShow(MaeveMenuScreen(controller) { openHudEditor(controller.modules) })
+    }
+
+    override fun openHudEditor(modules: ModuleManager) {
+        Minecraft.getInstance().setScreenAndShow(MaeveHudEditorScreen(modules, ::sampleContext))
     }
 
     private fun capture(mc: Minecraft): GameContext {
@@ -74,46 +79,67 @@ class FabricMinecraftBridge : MinecraftBridge {
         )
     }
 
-    /** HudCanvas backed by the 26.2 retained-mode extractor. */
-    private class ExtractorCanvas(
-        private val extractor: GuiGraphicsExtractor,
-        private val font: Font,
-    ) : HudCanvas {
-        override fun drawText(x: Int, y: Int, text: String, color: Int) {
-            extractor.text(font, text, x, y, color, true) // dropShadow = true
-        }
+    /** A context where every module renders (in-world coords substituted), so the editor can
+     *  position elements even when not in a world. */
+    private fun sampleContext(): GameContext {
+        val real = capture(Minecraft.getInstance())
+        return if (real.inWorld) real else real.copy(inWorld = true, playerX = 100.5, playerY = 64.0, playerZ = -200.5)
+    }
+}
 
-        override fun drawStyledText(x: Int, y: Int, text: String, run: TextRun) {
-            val style = Style.EMPTY
-                .withColor(run.color and 0xFFFFFF)
-                .withBold(run.bold)
-                .withItalic(run.italic)
-                .withUnderlined(run.underline)
-                .withStrikethrough(run.strikethrough)
-            // RGB on the Style + full color arg as fallback. MC's text color is RGB-only, so
-            // text alpha is not honored here (background panels carry translucency instead).
-            extractor.text(font, Component.literal(text).setStyle(style), x, y, run.color, run.shadow)
-        }
+/** HudCanvas backed by the 26.2 retained-mode extractor. Open so the editor canvas extends it. */
+internal open class ExtractorCanvas(
+    protected val extractor: GuiGraphicsExtractor,
+    protected val font: Font,
+) : HudCanvas {
+    override fun drawText(x: Int, y: Int, text: String, color: Int) {
+        extractor.text(font, text, x, y, color, true) // dropShadow = true
+    }
 
-        override fun fill(x: Int, y: Int, w: Int, h: Int, color: Int) {
-            extractor.fill(x, y, x + w, y + h, color)
-        }
+    override fun drawStyledText(x: Int, y: Int, text: String, run: TextRun) {
+        val style = Style.EMPTY
+            .withColor(run.color and 0xFFFFFF)
+            .withBold(run.bold)
+            .withItalic(run.italic)
+            .withUnderlined(run.underline)
+            .withStrikethrough(run.strikethrough)
+        // RGB on the Style + full color arg as fallback. MC's text color is RGB-only, so
+        // text alpha is not honored here (background panels carry translucency instead).
+        extractor.text(font, Component.literal(text).setStyle(style), x, y, run.color, run.shadow)
+    }
 
-        override fun withScale(scale: Float, pivotX: Int, pivotY: Int, body: () -> Unit) {
-            val pose = extractor.pose()
-            pose.pushMatrix()
-            pose.translate(pivotX.toFloat(), pivotY.toFloat())
-            if (scale != 1.0f) pose.scale(scale, scale)
-            try {
-                body()
-            } finally {
-                pose.popMatrix()
-            }
-        }
+    override fun fill(x: Int, y: Int, w: Int, h: Int, color: Int) {
+        extractor.fill(x, y, x + w, y + h, color)
+    }
 
-        override fun textWidth(text: String): Int = font.width(text)
-        override val lineHeight: Int get() = font.lineHeight
-        override val screenWidth: Int get() = extractor.guiWidth()
-        override val screenHeight: Int get() = extractor.guiHeight()
+    override fun withScale(scale: Float, pivotX: Int, pivotY: Int, body: () -> Unit) {
+        val pose = extractor.pose()
+        pose.pushMatrix()
+        pose.translate(pivotX.toFloat(), pivotY.toFloat())
+        if (scale != 1.0f) pose.scale(scale, scale)
+        try {
+            body()
+        } finally {
+            pose.popMatrix()
+        }
+    }
+
+    override fun textWidth(text: String): Int = font.width(text)
+    override val lineHeight: Int get() = font.lineHeight
+    override val screenWidth: Int get() = extractor.guiWidth()
+    override val screenHeight: Int get() = extractor.guiHeight()
+}
+
+/** Adds the editor overlay primitives to [ExtractorCanvas]. */
+internal class EditorExtractorCanvas(
+    extractor: GuiGraphicsExtractor,
+    font: Font,
+) : ExtractorCanvas(extractor, font), EditorCanvas {
+    override fun border(x: Int, y: Int, w: Int, h: Int, color: Int) {
+        extractor.outline(x, y, w, h, color)
+    }
+
+    override fun overlayStratum() {
+        extractor.nextStratum()
     }
 }

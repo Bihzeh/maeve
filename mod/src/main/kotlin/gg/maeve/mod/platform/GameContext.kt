@@ -20,7 +20,8 @@ data class GameContext(
 /**
  * Render-time text attributes passed from the controller to the canvas (no Minecraft types).
  * Note: Minecraft's text renderer uses an RGB-only color, so the alpha channel of [color] is
- * ignored on styled text — use a background panel ([HudStyle.background]) for translucency.
+ * ignored on styled text — use a background panel ([gg.maeve.mod.module.HudStyle.background])
+ * for translucency.
  */
 data class TextRun(
     val color: Int,
@@ -37,19 +38,19 @@ data class TextRun(
  */
 interface HudCanvas {
     fun drawText(x: Int, y: Int, text: String, color: Int)
-
-    /** Draw text with full styling (bold/italic/underline/strikethrough/shadow). */
     fun drawStyledText(x: Int, y: Int, text: String, run: TextRun)
-
-    /** Fill a rectangle [x],[y] of size [w]x[h] with an ARGB [color]. */
     fun fill(x: Int, y: Int, w: Int, h: Int, color: Int)
-
-    /** Run [body] with the canvas origin translated to ([pivotX],[pivotY]) and uniformly
-     *  scaled by [scale]; body draws in element-local coordinates. */
     fun withScale(scale: Float, pivotX: Int, pivotY: Int, body: () -> Unit)
-
     fun textWidth(text: String): Int
     val lineHeight: Int
     val screenWidth: Int
     val screenHeight: Int
+}
+
+/** Adds the overlay primitives the HUD editor needs on top of [HudCanvas]. */
+interface EditorCanvas : HudCanvas {
+    /** Draw a 1px rectangle outline. */
+    fun border(x: Int, y: Int, w: Int, h: Int, color: Int)
+    /** Raise the draw z-layer so editor overlays sit above the HUD preview. */
+    fun overlayStratum()
 }

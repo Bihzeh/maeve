@@ -9,26 +9,22 @@ import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
 
 /**
- * Basic in-game mod menu for Phase 1: keyboard-driven (Up/Down to select, Enter to
- * toggle, Esc to close). Rendered with the 26.2 retained-mode extractor. A richer
- * widget-based menu + draggable HUD editor arrive in Phase 2.
+ * In-game mod menu: keyboard-driven (Up/Down select, Enter toggle/open, Esc close). The last
+ * row opens the HUD editor. Rendered with the 26.2 retained-mode extractor.
  */
 class MaeveMenuScreen(
     private val controller: ModMenuController,
+    private val onOpenEditor: () -> Unit,
 ) : Screen(Component.literal("Maeve")) {
 
     private var selected = 0
 
-    override fun extractRenderState(
-        extractor: GuiGraphicsExtractor,
-        mouseX: Int,
-        mouseY: Int,
-        deltaTicks: Float,
-    ) {
+    override fun extractRenderState(extractor: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, deltaTicks: Float) {
         super.extractRenderState(extractor, mouseX, mouseY, deltaTicks)
         val font = Minecraft.getInstance().font
         val rows = controller.rows()
-        if (selected >= rows.size) selected = maxOf(0, rows.size - 1)
+        val total = rows.size + 1
+        if (selected >= total) selected = total - 1
 
         extractor.text(font, "Maeve", 20, 16, WHITE, true)
         rows.forEachIndexed { i, row ->
@@ -37,26 +33,21 @@ class MaeveMenuScreen(
             val color = if (row.enabled) GREEN else GREY
             extractor.text(font, "$cursor${row.name}: $state", 20, 40 + i * 12, color, true)
         }
-        extractor.text(
-            font,
-            "Up/Down select  -  Enter toggle  -  Esc close",
-            20,
-            40 + rows.size * 12 + 10,
-            DARK_GREY,
-            true,
-        )
+        val editorRow = rows.size
+        val cursor = if (selected == editorRow) "> " else "  "
+        extractor.text(font, "${cursor}Edit HUD...", 20, 40 + editorRow * 12, GOLD, true)
+        extractor.text(font, "Up/Down select  -  Enter  -  Esc close", 20, 40 + total * 12 + 10, DARK_GREY, true)
     }
 
     override fun keyPressed(event: KeyEvent): Boolean {
         val rows = controller.rows()
-        if (rows.isNotEmpty()) {
-            when (event.key()) {
-                GLFW.GLFW_KEY_UP -> { selected = (selected - 1 + rows.size) % rows.size; return true }
-                GLFW.GLFW_KEY_DOWN -> { selected = (selected + 1) % rows.size; return true }
-                GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
-                    rows.getOrNull(selected)?.let { controller.onToggle(it.id) }
-                    return true
-                }
+        val total = rows.size + 1
+        when (event.key()) {
+            GLFW.GLFW_KEY_UP -> { selected = (selected - 1 + total) % total; return true }
+            GLFW.GLFW_KEY_DOWN -> { selected = (selected + 1) % total; return true }
+            GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
+                if (selected < rows.size) rows.getOrNull(selected)?.let { controller.onToggle(it.id) } else onOpenEditor()
+                return true
             }
         }
         return super.keyPressed(event)
@@ -68,6 +59,7 @@ class MaeveMenuScreen(
         const val WHITE = 0xFFFFFFFF.toInt()
         const val GREEN = 0xFF55FF55.toInt()
         const val GREY = 0xFFAAAAAA.toInt()
+        const val GOLD = 0xFFE2B45C.toInt()
         const val DARK_GREY = 0xFF808080.toInt()
     }
 }

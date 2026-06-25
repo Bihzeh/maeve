@@ -1,5 +1,6 @@
 package gg.maeve.mod.platform
 
+import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.ui.ModMenuController
 
 /**
@@ -19,4 +20,7 @@ interface MinecraftBridge {
 
     /** Open the in-game mod menu for the given controller. */
     fun openModMenu(controller: ModMenuController)
+
+    /** Open the in-game HUD editor (drag/show-hide/style) for the given modules. */
+    fun openHudEditor(modules: ModuleManager)
 }

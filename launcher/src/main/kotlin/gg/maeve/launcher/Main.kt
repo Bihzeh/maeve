@@ -3,6 +3,7 @@ package gg.maeve.launcher
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -15,7 +16,12 @@ fun main() = application {
     val windowState = rememberWindowState(width = 1060.dp, height = 680.dp)
     val scope = rememberCoroutineScope()
     val vm = remember { LauncherViewModel(scope) }
-    Window(onCloseRequest = ::exitApplication, state = windowState, title = "Maeve") {
+    Window(
+        onCloseRequest = ::exitApplication,
+        state = windowState,
+        title = "Maeve",
+        icon = painterResource("brand/maeve.png"),
+    ) {
         MaeveTheme {
             LaunchedEffect(Unit) { vm.checkForUpdates() }
             Shell(vm)

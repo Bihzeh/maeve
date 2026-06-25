@@ -19,11 +19,22 @@ dependencies {
 
     implementation(project(":shared"))
 
+    // Brand SVG -> PNG/ICO rasterizer (rasterizeBrand task only; pure-Java, headless).
+    // compileOnly so Batik never lands in the shipped app.
+    compileOnly("org.apache.xmlgraphics:batik-transcoder:1.17")
+    compileOnly("org.apache.xmlgraphics:batik-codec:1.17")
+
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
 tasks.test { useJUnitPlatform() }
+
+val brandTools: Configuration by configurations.creating
+dependencies {
+    brandTools("org.apache.xmlgraphics:batik-transcoder:1.17")
+    brandTools("org.apache.xmlgraphics:batik-codec:1.17")
+}
 
 // Bake version + the build-time dev flag into a classpath resource read at runtime.
 // dev=true ONLY when built with -Pmaeve.dev=true (the dev-build workflow). Public
@@ -79,6 +90,10 @@ compose.desktop {
             )
             packageName = "Maeve"
             packageVersion = (project.version as String).substringBefore("-").ifEmpty { "1.0.0" }
+            windows {
+                // Concept C "Sovereign Stone" — regenerate via `:launcher:rasterizeBrand`.
+                iconFile.set(project.file("icons/maeve.ico"))
+            }
         }
     }
 }
@@ -98,4 +113,13 @@ tasks.register<JavaExec>("uiPreview") {
     description = "Render launcher screens to build/ui-preview/*.png"
     mainClass.set("gg.maeve.launcher.ui.UiPreviewMainKt")
     classpath = sourceSets["main"].runtimeClasspath
+}
+
+// Rasterize brand SVGs (logo/icon) to PNG via Skia's CPU surface.
+tasks.register<JavaExec>("rasterizeBrand") {
+    group = "build"
+    description = "Rasterize docs/brand/maeve-icon.svg to launcher/build/brand/icon-*.png"
+    mainClass.set("gg.maeve.launcher.brand.BrandRasterMainKt")
+    classpath = sourceSets["main"].runtimeClasspath + brandTools
+    workingDir = rootProject.projectDir
 }

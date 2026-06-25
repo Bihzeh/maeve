@@ -1,4 +1,6 @@
-# Maeve
+<p align="center">
+  <img src="docs/brand/logo.png" alt="Maeve" width="380">
+</p>
 
 A legitimate, **server-legal** performance + quality-of-life Minecraft client — FPS boost, bundled QoL mods, an in-game HUD/mod menu, cross-user cosmetics, friends/parties, and a custom launcher with Microsoft auth and multi-version support.
 

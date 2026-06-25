@@ -1,6 +1,7 @@
 package gg.maeve.mod
 
 import gg.maeve.mod.config.Config
+import gg.maeve.mod.module.FontModule
 import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.module.hud.CoordsModule
 import gg.maeve.mod.module.hud.FpsModule
@@ -12,18 +13,19 @@ import gg.maeve.mod.ui.ModMenuController
 import net.fabricmc.api.ClientModInitializer
 
 /**
- * Maeve client entrypoint. Wires the module system, HUD renderer, config, and the
- * Minecraft bridge. All Minecraft-specific work is delegated to MinecraftBridge.
+ * Maeve client entrypoint. Wires the module system, HUD renderer, config, the font pack, and
+ * the Minecraft bridge. All Minecraft-specific work is delegated to MinecraftBridge.
  */
 class MaeveMod : ClientModInitializer {
 
     override fun onInitializeClient() {
         val bridge: MinecraftBridge = FabricMinecraftBridge()
+        bridge.registerFontPack() // register the pack source only (no reload during init)
 
         val config = Config(bridge.configDir()).apply { load() }
         val modules = ModuleManager(config)
 
-        // MVP module set. Phase 2 adds CPS, armor/potion HUD, scoreboard, zoom, etc.
+        modules.register(FontModule())
         modules.register(FpsModule())
         modules.register(CoordsModule())
         modules.register(KeystrokesModule())
@@ -33,8 +35,11 @@ class MaeveMod : ClientModInitializer {
 
         // Cosmetics: Phase 3 wires HttpCosmeticsClient + the player-render mixin.
 
-        val menu = ModMenuController(modules)
+        val menu = ModMenuController(modules) { id, enabled -> if (id == "font") bridge.setCustomFont(enabled) }
         bridge.installMenuKeybind { bridge.openModMenu(menu) }
+
+        // Apply the persisted font choice after the first client tick (never reload during init).
+        bridge.applyCustomFontOnStartup(modules.byId("font")?.enabled ?: true)
 
         LOG.info("Maeve initialized: {} modules", modules.all().size)
     }

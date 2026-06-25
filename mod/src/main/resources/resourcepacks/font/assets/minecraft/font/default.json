@@ -1,0 +1,15 @@
+{
+  "providers": [
+    { "type": "reference", "id": "minecraft:include/space" },
+    {
+      "type": "ttf",
+      "file": "maeve:geist.ttf",
+      "size": 10.0,
+      "oversample": 2.0,
+      "shift": [0.0, 0.0],
+      "filter": { "uniform": false }
+    },
+    { "type": "reference", "id": "minecraft:include/default", "filter": { "uniform": false } },
+    { "type": "reference", "id": "minecraft:include/unifont" }
+  ]
+}

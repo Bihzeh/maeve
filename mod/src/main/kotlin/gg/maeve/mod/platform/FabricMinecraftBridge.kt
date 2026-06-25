@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader
+import net.fabricmc.fabric.api.resource.v1.pack.PackActivationType
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
@@ -17,6 +19,7 @@ import net.minecraft.network.chat.Style
 import net.minecraft.resources.Identifier
 import org.lwjgl.glfw.GLFW
 import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * The single file that touches Minecraft 26.2 + Fabric API. All symbol names here
@@ -84,6 +87,41 @@ class FabricMinecraftBridge : MinecraftBridge {
     private fun sampleContext(): GameContext {
         val real = capture(Minecraft.getInstance())
         return if (real.inWorld) real else real.copy(inWorld = true, playerX = 100.5, playerY = 64.0, playerZ = -200.5)
+    }
+
+    override fun registerFontPack() {
+        val container = FabricLoader.getInstance().getModContainer("maeve").orElseThrow()
+        ResourceLoader.registerBuiltinPack(FONT_PACK, container, PackActivationType.NORMAL)
+    }
+
+    override fun isCustomFontEnabled(): Boolean =
+        Minecraft.getInstance().resourcePackRepository.selectedIds.contains(FONT_PACK_ID)
+
+    override fun setCustomFont(enabled: Boolean) {
+        val mc = Minecraft.getInstance()
+        val repo = mc.resourcePackRepository
+        if (enabled && !repo.availableIds.contains(FONT_PACK_ID)) repo.reload()
+        val selected = LinkedHashSet(repo.selectedIds)
+        val changed = if (enabled) selected.add(FONT_PACK_ID) else selected.remove(FONT_PACK_ID)
+        if (!changed) return // already in the desired state -> no reload
+        repo.setSelected(selected) // must precede reloadResourcePacks(); it rebuilds from the repo
+        mc.options.updateResourcePacks(repo)
+        mc.options.save()
+        mc.reloadResourcePacks()
+    }
+
+    override fun applyCustomFontOnStartup(enabled: Boolean) {
+        val done = AtomicBoolean(false)
+        ClientTickEvents.END_CLIENT_TICK.register(
+            ClientTickEvents.EndTick { _ ->
+                if (done.compareAndSet(false, true)) setCustomFont(enabled)
+            },
+        )
+    }
+
+    private companion object {
+        val FONT_PACK = Identifier.fromNamespaceAndPath("maeve", "font")
+        const val FONT_PACK_ID = "maeve:font"
     }
 }
 

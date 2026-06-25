@@ -23,4 +23,16 @@ interface MinecraftBridge {
 
     /** Open the in-game HUD editor (drag/show-hide/style) for the given modules. */
     fun openHudEditor(modules: ModuleManager)
+
+    /** Register the bundled Geist font resource pack as an available (not-yet-applied) pack. */
+    fun registerFontPack()
+
+    /** Enable/disable the Geist font pack at runtime (selects it + reloads resources). */
+    fun setCustomFont(enabled: Boolean)
+
+    /** Whether the font pack is currently selected. */
+    fun isCustomFontEnabled(): Boolean
+
+    /** Apply the persisted font state once after the client finishes its initial load. */
+    fun applyCustomFontOnStartup(enabled: Boolean)
 }

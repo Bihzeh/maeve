@@ -29,19 +29,20 @@ object CustomizeLayout {
     /** Style toggles shown beneath the enable row (the enable row uses the "visible" control id). */
     val TOGGLES = listOf("bold", "italic", "underline", "strike", "shadow", "background")
 
-    private fun hudHeight(): Int {
+    private fun hudHeight(optionCount: Int): Int {
         val rightRows = 1 + TOGGLES.size + 1 + 1 // visible + toggles + scale row + reset
         val swatchRows = (SWATCHES.size + 4) / 5
         val rightH = rightRows * (ROW_H + ROW_GAP) + swatchRows * (13 + 4)
-        val leftH = 12 + 4 + SV + 6 + 12 // preview + sv + hex
+        var leftH = 12 + 4 + SV + 6 + 12 // preview + sv + hex
+        if (optionCount > 0) leftH += 14 + optionCount * (ROW_H + ROW_GAP) // "Options" caption + rows
         return TITLE_H + maxOf(rightH, leftH) + PAD
     }
 
     private fun nonHudHeight(): Int = TITLE_H + ROW_H + PAD * 2
 
-    fun popupRect(screenW: Int, screenH: Int, isHud: Boolean): Rect {
+    fun popupRect(screenW: Int, screenH: Int, isHud: Boolean, optionCount: Int = 0): Rect {
         val w = if (isHud) W else NONHUD_W
-        val h = if (isHud) hudHeight() else nonHudHeight()
+        val h = if (isHud) hudHeight(optionCount) else nonHudHeight()
         return Rect((screenW - w) / 2, ((screenH - h) / 2).coerceAtLeast(0), w, h)
     }
 
@@ -79,6 +80,14 @@ object CustomizeLayout {
             out += Control("swatch:$i", Rect(rightX + col * (sw + gap), y + r * (sw + gap), sw, sw))
         }
         return out
+    }
+
+    /** Module-specific option switch rows, stacked in the left column beneath the hex field. */
+    fun optionRows(popup: Rect, count: Int): List<Rect> {
+        val leftX = popup.left + PAD
+        val colW = (popup.width - 2 * PAD - GAP) / 2
+        val top = popup.top + TITLE_H + 16 + SV + 6 + 12 + 14 // below the hex field + an "Options" caption
+        return (0 until count).map { i -> Rect(leftX, top + i * (ROW_H + ROW_GAP), colW, ROW_H) }
     }
 
     fun controlRect(popup: Rect, id: String): Rect? = controls(popup).firstOrNull { it.id == id }?.rect

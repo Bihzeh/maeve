@@ -30,4 +30,29 @@ object HudFormat {
     }
 
     fun speed(blocksPerSecond: Double): String = "%.2f b/s".format(blocksPerSecond)
+
+    /**
+     * A horizontal direction tape centred on the player's facing. MC yaw -> facing bearing
+     * (N=0, E=90, S=180, W=270); the 8 compass points are placed by their angular offset within
+     * +/-[halfSpan] degrees. Returns two equal-width lines: the tape and a centred caret marking
+     * the current heading.
+     */
+    fun compass(yaw: Float, width: Int = 31, halfSpan: Float = 90f): List<String> {
+        val bearing = ((yaw + 180f) % 360f + 360f) % 360f
+        val center = width / 2
+        val row = CharArray(width) { '\u00B7' } // middot filler
+        val points = listOf(0 to "N", 45 to "NE", 90 to "E", 135 to "SE", 180 to "S", 225 to "SW", 270 to "W", 315 to "NW")
+        for ((deg, label) in points) {
+            val delta = angleDiff(deg.toFloat(), bearing)
+            if (kotlin.math.abs(delta) > halfSpan) continue
+            val col = center + Math.round(delta / halfSpan * center)
+            val start = col - (label.length - 1) / 2
+            for (j in label.indices) (start + j).let { if (it in 0 until width) row[it] = label[j] }
+        }
+        val caret = CharArray(width) { ' ' }.also { it[center] = '^' }.concatToString()
+        return listOf(String(row), caret)
+    }
+
+    /** Shortest signed difference a-b in (-180, 180]. */
+    private fun angleDiff(a: Float, b: Float): Float = (a - b + 540f) % 360f - 180f
 }

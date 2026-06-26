@@ -4,6 +4,7 @@ import gg.maeve.mod.config.Config
 import gg.maeve.mod.module.FontModule
 import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.module.hud.ClockModule
+import gg.maeve.mod.module.hud.CompassModule
 import gg.maeve.mod.module.hud.CoordsModule
 import gg.maeve.mod.module.hud.CpsModule
 import gg.maeve.mod.module.hud.DayModule
@@ -32,6 +33,7 @@ class MaeveMod : ClientModInitializer {
         modules.register(FontModule())
         modules.register(FpsModule())
         modules.register(CoordsModule())
+        modules.register(CompassModule())
         modules.register(KeystrokesModule())
         modules.register(DirectionModule())
         modules.register(DayModule())

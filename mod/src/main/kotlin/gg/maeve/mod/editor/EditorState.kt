@@ -128,12 +128,23 @@ class EditorState {
     private fun onCustomizePress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, modules: ModuleManager): Boolean {
         val sel = selectedId
         val isHud = sel != null && modules.hudById(sel) != null
-        val popup = CustomizeLayout.popupRect(screenW, screenH, isHud)
+        val popup = CustomizeLayout.popupRect(screenW, screenH, isHud, modules.hudById(sel ?: "")?.toggles?.size ?: 0)
         if (CustomizeLayout.closeButton(popup).contains(mouseX, mouseY)) { backToGrid(); return true }
         if (sel == null) return true
         if (isHud) {
             val ctrl = CustomizeLayout.controls(popup).firstOrNull { it.rect.contains(mouseX, mouseY) }
             if (ctrl == null) {
+                val mod = modules.hudById(sel)
+                val opts = mod?.toggles ?: emptyList()
+                if (opts.isNotEmpty()) {
+                    val oi = CustomizeLayout.optionRows(popup, opts.size).indexOfFirst { it.contains(mouseX, mouseY) }
+                    if (oi >= 0) {
+                        val key = opts[oi].key
+                        modules.setOption(sel, key, !mod!!.option(key)); dirty = true
+                        hexFocused = false; hexBuffer = ""; activeColor = null
+                        return true
+                    }
+                }
                 if (popup.contains(mouseX, mouseY)) { hexFocused = false; activeColor = null; return true }
                 backToGrid(); return true // click-away returns to the grid
             }
@@ -159,7 +170,7 @@ class EditorState {
 
     fun onDrag(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, modules: ModuleManager): Boolean {
         activeColor?.let { ac ->
-            val popup = CustomizeLayout.popupRect(screenW, screenH, true)
+            val popup = CustomizeLayout.popupRect(screenW, screenH, true, selectedId?.let { modules.hudById(it)?.toggles?.size } ?: 0)
             val rect = CustomizeLayout.controlRect(popup, ac) ?: return true
             setPickerValue(ac, rect, mouseX, mouseY); applyEditColor(modules)
             return true

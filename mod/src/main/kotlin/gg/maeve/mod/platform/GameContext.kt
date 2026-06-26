@@ -20,6 +20,7 @@ data class GameContext(
     val speed: Double = 0.0,
     val leftCps: Int = 0,
     val rightCps: Int = 0,
+    val keyJump: Boolean = false,
 )
 
 /**

@@ -128,7 +128,7 @@ class EditorRenderer {
         val sel = state.customizing ?: return
         val module = modules.byId(sel) ?: return
         val hud = modules.hudById(sel)
-        val popup = CustomizeLayout.popupRect(screenW, screenH, hud != null)
+        val popup = CustomizeLayout.popupRect(screenW, screenH, hud != null, hud?.toggles?.size ?: 0)
         panel(canvas, popup)
         // left-aligned title bar (so a long name never collides with the close button)
         canvas.gradientV(popup.left + 1, popup.top + 1, popup.width - 2, 18, lighten(MaevePalette.elevated, 0.08f), MaevePalette.elevated)
@@ -177,6 +177,16 @@ class EditorRenderer {
             canvas.drawText((sm.right + sp.left) / 2 - canvas.textWidth(v) / 2, sm.top + 3, v, MaevePalette.text2)
         }
         c["reset"]?.rect?.let { button(canvas, it, "Reset style") }
+        val opts = module.toggles
+        if (opts.isNotEmpty()) {
+            val rows = CustomizeLayout.optionRows(popup, opts.size)
+            canvas.drawText(rows[0].left, rows[0].top - 11, "Options", MaevePalette.gold)
+            opts.forEachIndexed { i, t ->
+                val r = rows[i]; val on = module.option(t.key)
+                canvas.drawText(r.left + 2, r.top + 3, t.label, if (on) white else MaevePalette.text2)
+                switch(canvas, Rect(r.right - 24, r.top + 1, 22, r.height - 2), on)
+            }
+        }
         CustomizeLayout.SWATCHES.forEachIndexed { i, col ->
             c["swatch:$i"]?.rect?.let { r ->
                 canvas.fill(r.left, r.top, r.width, r.height, black or MaeveColor.rgbOf(col))

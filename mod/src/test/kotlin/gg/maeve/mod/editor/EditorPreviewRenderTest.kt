@@ -4,6 +4,7 @@ import gg.maeve.mod.config.Config
 import gg.maeve.mod.module.FontModule
 import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.module.hud.ClockModule
+import gg.maeve.mod.module.hud.CompassModule
 import gg.maeve.mod.module.hud.CoordsModule
 import gg.maeve.mod.module.hud.CpsModule
 import gg.maeve.mod.module.hud.DayModule
@@ -73,7 +74,7 @@ class EditorPreviewRenderTest {
 
     private fun fullManager(): ModuleManager =
         ModuleManager(Config(Files.createTempDirectory("preview"))).apply {
-            register(FontModule()); register(FpsModule()); register(CoordsModule()); register(KeystrokesModule())
+            register(FontModule()); register(FpsModule()); register(CoordsModule()); register(CompassModule()); register(KeystrokesModule())
             register(DirectionModule()); register(DayModule()); register(ClockModule()); register(SpeedModule()); register(CpsModule())
         }
 
@@ -125,7 +126,7 @@ class EditorPreviewRenderTest {
         run {
             val (img, canvas) = frame(w, h); val mgr = fullManager(); val st = EditorState()
             val mods = PositionLayout.modsButton(w, h); st.onPress(cx(mods), cy(mods), w, h, emptyList(), mgr)
-            val idx = mgr.all().indexOfFirst { it.id == "fps" }
+            val idx = mgr.all().indexOfFirst { it.id == "keystrokes" }
             val card = GridLayout.cards(w, h, mgr.all().size)[idx]; st.onPress(cx(card), cy(card), w, h, emptyList(), mgr)
             renderer.render(canvas, w, h, -1, -1, ctx(), mgr, st)
             assertTrue(write(img, "3-customize-hud.png").length() > 0)

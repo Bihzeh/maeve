@@ -5,6 +5,7 @@ import gg.maeve.mod.module.FontModule
 import gg.maeve.mod.module.HudAnchor
 import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.module.hud.CoordsModule
+import gg.maeve.mod.module.hud.CpsModule
 import gg.maeve.mod.module.hud.FpsModule
 import gg.maeve.mod.platform.GameContext
 import gg.maeve.shared.MaevePalette
@@ -27,10 +28,10 @@ private fun Rect.cx() = left + width / 2
 private fun Rect.cy() = top + height / 2
 
 class EditorStateTest {
-    private fun setup(screenW: Int = 800, screenH: Int = 600, withFont: Boolean = false, withCoords: Boolean = false):
+    private fun setup(screenW: Int = 800, screenH: Int = 600, withFont: Boolean = false, withCoords: Boolean = false, withCps: Boolean = false):
         Triple<ModuleManager, List<ElementBox>, EditorState> {
         val mgr = ModuleManager(Config(Files.createTempDirectory("editor"))).apply {
-            register(FpsModule()); if (withCoords) register(CoordsModule()); if (withFont) register(FontModule())
+            register(FpsModule()); if (withCoords) register(CoordsModule()); if (withCps) register(CpsModule()); if (withFont) register(FontModule())
         }
         val boxes = ElementLayout.boxesFor(mgr.hudModules(), ctx(), Measure, screenW, screenH)
         return Triple(mgr, boxes, EditorState())
@@ -352,5 +353,28 @@ class EditorStateTest {
         s.onPress(h.cx(), h.cy(), 800, 600, boxesOf(mgr), mgr)
         s.onDrag(fps0.right + 20, fps0.bottom + 20, 800, 600, mgr)
         assertTrue(mgr.hudById("fps")!!.anchor != HudAnchor.TOP_LEFT, "anchor not clobbered to TOP_LEFT")
+    }
+
+    @Test fun `customize toggles a module option in place`() {
+        val (mgr, boxes, s) = setup(withCps = true)
+        openCustomize(s, boxes, mgr, "cps")
+        val popup = CustomizeLayout.popupRect(800, 600, true)
+        val rows = CustomizeLayout.optionRows(popup, mgr.hudById("cps")!!.toggles.size)
+        val before = mgr.hudById("cps")!!.option("right")
+        s.onPress(rows[0].cx(), rows[0].cy(), 800, 600, boxes, mgr)
+        assertEquals(!before, mgr.hudById("cps")!!.option("right"), "option toggled")
+        assertEquals(EditorView.CUSTOMIZE, s.view, "popup stays open")
+    }
+
+    @Test fun `toggling an option clears hex focus`() {
+        val (mgr, boxes, s) = setup(withCps = true)
+        openCustomize(s, boxes, mgr, "cps")
+        val popup = CustomizeLayout.popupRect(800, 600, true, mgr.hudById("cps")!!.toggles.size)
+        val hex = CustomizeLayout.controlRect(popup, "hex")!!
+        s.onPress(hex.left + 2, hex.top + 2, 800, 600, boxes, mgr)
+        assertTrue(s.isHexFocused)
+        val row = CustomizeLayout.optionRows(popup, 1)[0]
+        s.onPress(row.cx(), row.cy(), 800, 600, boxes, mgr)
+        assertFalse(s.isHexFocused, "hex focus cleared by option toggle")
     }
 }

@@ -79,6 +79,23 @@ class CustomizeLayoutTest {
         assertTrue(en.left >= plain.left && en.right <= plain.right && en.top >= plain.top && en.bottom <= plain.bottom)
     }
 
+    @Test fun `popup grows to fit many option rows`() {
+        val small = CustomizeLayout.popupRect(800, 600, true, 0)
+        val big = CustomizeLayout.popupRect(800, 600, true, 4)
+        assertTrue(big.height > small.height, "popup taller with 4 options")
+        for (r in CustomizeLayout.optionRows(big, 4)) assertTrue(r.bottom <= big.bottom, "4th option row inside popup")
+    }
+
+    @Test fun `option rows sit inside the popup`() {
+        val popup = CustomizeLayout.popupRect(800, 600, true)
+        val rows = CustomizeLayout.optionRows(popup, 2)
+        assertEquals(2, rows.size)
+        for (r in rows) {
+            assertTrue(r.left >= popup.left && r.right <= popup.right, "option row within width")
+            assertTrue(r.top >= popup.top && r.bottom <= popup.bottom, "option row within height")
+        }
+    }
+
     @Test fun `controls fit within the popup at a small gui size`() {
         val popup = CustomizeLayout.popupRect(360, 270, true) // gui-scale-4-ish
         for (c in CustomizeLayout.controls(popup)) {

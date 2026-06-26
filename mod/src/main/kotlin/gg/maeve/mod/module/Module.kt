@@ -34,6 +34,11 @@ interface HudModule : Module {
     /** The module's base/theme style — the reset target. */
     val defaultStyle: HudStyle get() = HudStyle()
 
+    /** Module-specific boolean options surfaced in the editor (beyond generic [style]). */
+    val toggles: List<ModuleToggle> get() = emptyList()
+    fun option(key: String): Boolean = false
+    fun setOption(key: String, value: Boolean) {}
+
     /** Produce the lines to draw this frame. Empty = nothing to draw. */
     fun render(ctx: gg.maeve.mod.platform.GameContext): List<HudLine>
 }

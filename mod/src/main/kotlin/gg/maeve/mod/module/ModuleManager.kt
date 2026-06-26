@@ -56,6 +56,10 @@ class ModuleManager(private val config: Config) {
         (modules[id] as? HudModule)?.let { it.style = transform(it.style) }
     }
 
+    fun setOption(id: String, key: String, value: Boolean) {
+        (modules[id] as? HudModule)?.setOption(key, value)
+    }
+
     fun resetStyle(id: String) {
         (modules[id] as? HudModule)?.let { it.style = it.defaultStyle }
     }

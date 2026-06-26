@@ -36,6 +36,7 @@ private data class ModuleState(
     val background: Boolean? = null,
     val backgroundColor: String? = null,
     val padding: Int? = null,
+    val options: Map<String, Boolean>? = null,
 )
 
 @Serializable
@@ -107,6 +108,7 @@ class Config(private val dir: Path) {
                 backgroundColor = s.backgroundColor?.let(HexColor::decode) ?: d.backgroundColor,
                 padding = s.padding ?: d.padding,
             )
+            s.options?.forEach { (k, v) -> module.setOption(k, v) }
         }
     }
 
@@ -126,6 +128,7 @@ class Config(private val dir: Path) {
                     shadow = st.shadow, scale = st.scale, align = st.align.name,
                     background = st.background, backgroundColor = HexColor.encode(st.backgroundColor),
                     padding = st.padding,
+                    options = m.toggles.takeIf { it.isNotEmpty() }?.associate { it.key to m.option(it.key) },
                 )
             } else {
                 ModuleState(m.enabled)

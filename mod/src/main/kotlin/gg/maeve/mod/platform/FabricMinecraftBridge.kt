@@ -79,6 +79,7 @@ class FabricMinecraftBridge : MinecraftBridge {
             speed = player?.deltaMovement?.let { kotlin.math.hypot(it.x, it.z) * 20.0 } ?: 0.0,
             leftCps = gg.maeve.mod.module.hud.ClickTracker.leftCps(),
             rightCps = gg.maeve.mod.module.hud.ClickTracker.rightCps(),
+            keyJump = opts.keyJump.isDown,
         )
     }
 

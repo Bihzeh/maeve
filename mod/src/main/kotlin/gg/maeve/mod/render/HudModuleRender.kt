@@ -1,17 +1,33 @@
 package gg.maeve.mod.render
 
-import gg.maeve.mod.module.HudLine
 import gg.maeve.mod.module.HudModule
+import gg.maeve.mod.platform.GameContext
 import gg.maeve.mod.platform.HudCanvas
 import gg.maeve.mod.platform.TextRun
 import kotlin.math.ceil
 
-/** Draws a single HUD module's lines with its anchor/scale/style/background. Pure; shared
- *  by the in-game renderer and the editor preview so they position elements identically. */
+/** Draws a single HUD module: either its own custom graphics (boxed modules) or its text lines,
+ *  with the module's anchor/scale/style/background. Pure; shared by the in-game renderer and the
+ *  editor preview so they position elements identically. */
 object HudModuleRender {
-    fun draw(canvas: HudCanvas, module: HudModule, lines: List<HudLine>) {
-        if (lines.isEmpty()) return
+    fun draw(canvas: HudCanvas, module: HudModule, ctx: GameContext) {
         val style = module.style
+        val fp = module.footprint(ctx)
+        if (fp != null) {
+            val (left, top) = HudLayout.resolveTopLeft(
+                module.anchor, module.offsetX, module.offsetY,
+                ceil(fp.w * style.scale).toInt(), ceil(fp.h * style.scale).toInt(),
+                canvas.screenWidth, canvas.screenHeight,
+            )
+            canvas.withScale(style.scale, left, top) {
+                if (style.background) canvas.fill(0, 0, fp.w, fp.h, style.backgroundColor)
+                module.drawCustom(canvas, ctx)
+            }
+            return
+        }
+
+        val lines = module.render(ctx)
+        if (lines.isEmpty()) return
         val pad = style.padding
         val textW = lines.maxOf { canvas.textWidth(it.text) }
         val textH = lines.size * canvas.lineHeight

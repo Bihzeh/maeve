@@ -41,6 +41,11 @@ interface HudModule : Module {
 
     /** Produce the lines to draw this frame. Empty = nothing to draw. */
     fun render(ctx: gg.maeve.mod.platform.GameContext): List<HudLine>
+
+    /** If non-null, the module draws itself (boxes/graphics) via [drawCustom] instead of text
+     *  lines; the value is its unscaled footprint. [drawCustom] draws at local (0,0). */
+    fun footprint(ctx: gg.maeve.mod.platform.GameContext): HudSize? = null
+    fun drawCustom(canvas: gg.maeve.mod.platform.HudCanvas, ctx: gg.maeve.mod.platform.GameContext) {}
 }
 
 /**
@@ -48,3 +53,6 @@ interface HudModule : Module {
  * value is an explicit per-line override (e.g. keystroke pressed vs released).
  */
 data class HudLine(val text: String, val color: Int? = null)
+
+/** Unscaled pixel footprint of a custom-drawn HUD module. */
+data class HudSize(val w: Int, val h: Int)

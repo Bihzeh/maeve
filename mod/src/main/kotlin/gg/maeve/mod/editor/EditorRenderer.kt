@@ -31,7 +31,7 @@ class EditorRenderer {
             override val lineHeight get() = canvas.lineHeight
         }
         val all = modules.hudModules()
-        for (m in all) HudModuleRender.draw(canvas, m, m.render(ctx))
+        for (m in all) HudModuleRender.draw(canvas, m, ctx)
         canvas.overlayStratum()
 
         val boxes = ElementLayout.boxesFor(all, ctx, measurer, screenW, screenH)

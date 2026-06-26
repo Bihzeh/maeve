@@ -9,23 +9,20 @@ private fun ctx(left: Int = 0, right: Int = 0, jump: Boolean = false, yaw: Float
     GameContext(60, inWorld, 0.0, 0.0, 0.0, false, false, false, false, yaw = yaw, leftCps = left, rightCps = right, keyJump = jump)
 
 class ModuleFeaturesTest {
-    @Test fun `keystrokes shows the spacebar row under ASD when enabled`() {
+    @Test fun `keystrokes is a boxed module whose footprint grows with the spacebar`() {
         val m = KeystrokesModule()
-        m.setOption("space", true)
-        val lines = m.render(ctx(jump = true))
-        assertEquals(3, lines.size, "W / ASD / space")
-        assertTrue(lines[2].text.contains("\u2586"), "pressed spacebar is a filled bar: ${lines[2].text}")
+        assertTrue(m.render(ctx()).isEmpty(), "boxed module has no text lines")
+        m.setOption("space", false); val h0 = m.footprint(ctx())!!.h
+        m.setOption("space", true); val h1 = m.footprint(ctx())!!.h
+        assertTrue(h1 > h0, "spacebar adds a row")
     }
 
-    @Test fun `spacebar row matches the ASD row width`() {
-        val lines = KeystrokesModule().also { it.setOption("space", true) }.render(ctx(jump = true))
-        assertEquals(lines[1].text.length, lines[2].text.length, "spacebar spans A..D")
-    }
-
-    @Test fun `keystrokes hides the spacebar row when disabled`() {
-        val m = KeystrokesModule()
-        m.setOption("space", false)
-        assertEquals(2, m.render(ctx()).size)
+    @Test fun `keystrokes draws a slot per key`() {
+        val m = KeystrokesModule().apply { setOption("space", false) }
+        val canvas = gg.maeve.mod.FakeHudCanvas()
+        gg.maeve.mod.render.HudModuleRender.draw(canvas, m, ctx())
+        assertEquals(4, canvas.fills.size, "W A S D slots")
+        assertEquals(setOf("W", "A", "S", "D"), canvas.draws.map { it.text }.toSet())
     }
 
     @Test fun `cps shows both buttons by default and left-only when right disabled`() {

@@ -17,9 +17,16 @@ object ElementLayout {
     fun boxesFor(
         modules: List<HudModule>, ctx: GameContext, m: TextMeasurer, screenW: Int, screenH: Int,
     ): List<ElementBox> = modules.mapNotNull { module ->
+        val st = module.style
+        val fp = module.footprint(ctx)
+        if (fp != null) {
+            val footW = ceil(fp.w * st.scale).toInt()
+            val footH = ceil(fp.h * st.scale).toInt()
+            val (l0, t0) = HudLayout.resolveTopLeft(module.anchor, module.offsetX, module.offsetY, footW, footH, screenW, screenH)
+            return@mapNotNull ElementBox(module.id, Rect(l0, t0, footW, footH))
+        }
         val lines = module.render(ctx)
         if (lines.isEmpty()) return@mapNotNull null
-        val st = module.style
         val textW = lines.maxOf { m.width(it.text) }
         val textH = lines.size * m.lineHeight
         val footW = ceil((textW + st.padding * 2) * st.scale).toInt()

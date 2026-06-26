@@ -12,7 +12,7 @@ class HudRenderController(private val modules: ModuleManager) {
     fun draw(canvas: HudCanvas, ctx: GameContext) {
         for (module in modules.hudModules()) {
             if (!module.enabled) continue
-            HudModuleRender.draw(canvas, module, module.render(ctx))
+            HudModuleRender.draw(canvas, module, ctx)
         }
     }
 }

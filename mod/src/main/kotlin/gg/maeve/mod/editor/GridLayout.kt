@@ -42,6 +42,10 @@ object GridLayout {
         return Rect(panel.left + PAD, panel.top + 7, 46, 16)
     }
 
+    /** The On/Off switch hit-area inside a card (the switch widget + its label). Clicking here
+     *  toggles the module in place; clicking anywhere else on the card opens customization. */
+    fun toggleSwitch(card: Rect): Rect = Rect(card.left + 11, card.bottom - 21, 56, 14)
+
     /** Header strip height (for the renderer's title bar). */
     const val HEADER = HEADER_H
 }

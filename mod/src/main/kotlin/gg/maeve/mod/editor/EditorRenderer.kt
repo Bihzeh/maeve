@@ -107,9 +107,9 @@ class EditorRenderer {
         canvas.fill(r.left + 1, r.top + 1, 3, r.height - 2, if (enabled) MaevePalette.primary else MaevePalette.outline) // accent strip
         val innerL = r.left + 11
         canvas.drawText(innerL, r.top + 9, ellipsize(canvas, name, r.width - 22), if (enabled) white else MaevePalette.text2)
-        val sw = Rect(innerL, r.bottom - 21, 26, 13)
-        switch(canvas, sw, enabled)
-        canvas.drawText(sw.right + 6, sw.top + 3, if (enabled) "On" else "Off", MaevePalette.text2)
+        val ts = GridLayout.toggleSwitch(r) // shared hit-area: switch widget + its label
+        switch(canvas, Rect(ts.left, ts.top, 26, 13), enabled)
+        canvas.drawText(ts.left + 32, ts.top + 3, if (enabled) "On" else "Off", MaevePalette.text2)
         canvas.drawText(r.right - 12, r.top + (r.height - canvas.lineHeight) / 2, ">", MaevePalette.text2) // opens affordance
     }
 

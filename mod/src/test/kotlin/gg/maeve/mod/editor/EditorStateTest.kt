@@ -45,7 +45,7 @@ class EditorStateTest {
         openGrid(s, boxes, mgr)
         val idx = mgr.all().indexOfFirst { it.id == id }
         val card = GridLayout.cards(800, 600, mgr.all().size)[idx]
-        s.onPress(card.cx(), card.cy(), 800, 600, boxes, mgr)
+        s.onPress(card.left + 20, card.top + 10, 800, 600, boxes, mgr) // title area, not the switch
     }
 
     private fun control(id: String): Rect =
@@ -255,5 +255,16 @@ class EditorStateTest {
         val anchorBefore = mgr.hudById("fps")!!.anchor
         assertFalse(s.onDrag(10, 590, 800, 600, mgr))     // stale dragId must not re-anchor
         assertEquals(anchorBefore, mgr.hudById("fps")!!.anchor)
+    }
+
+    @Test fun `grid switch toggles the module in place without opening customize`() {
+        val (mgr, boxes, s) = setup(); openGrid(s, boxes, mgr)
+        val idx = mgr.all().indexOfFirst { it.id == "fps" }
+        val card = GridLayout.cards(800, 600, mgr.all().size)[idx]
+        val sw = GridLayout.toggleSwitch(card)
+        val before = mgr.hudById("fps")!!.enabled
+        s.onPress(sw.cx(), sw.cy(), 800, 600, boxes, mgr)
+        assertEquals(!before, mgr.hudById("fps")!!.enabled, "switch toggles enabled")
+        assertEquals(EditorView.GRID, s.view, "stays on the grid")
     }
 }

@@ -80,6 +80,10 @@ class EditorState {
         val idx = cards.indexOfFirst { it.contains(mouseX, mouseY) }
         if (idx >= 0) {
             val m = mods[idx]
+            if (GridLayout.toggleSwitch(cards[idx]).contains(mouseX, mouseY)) {
+                modules.setEnabled(m.id, !m.enabled); dirty = true // quick toggle in place; stay on the grid
+                return true
+            }
             selectedId = m.id
             view = EditorView.CUSTOMIZE
             hexFocused = false; activeColor = null

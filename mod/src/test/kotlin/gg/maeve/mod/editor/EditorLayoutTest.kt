@@ -87,4 +87,24 @@ class CustomizeLayoutTest {
     }
 }
 
+class PositionExtrasTest {
+    @Test fun `snap button present and disjoint from mods and done`() {
+        val snap = PositionLayout.snapButton(800, 600)
+        val mods = PositionLayout.modsButton(800, 600)
+        val done = PositionLayout.doneButton(800, 600)
+        assertTrue(snap.width > 0 && snap.height > 0)
+        assertTrue(disjoint(snap, mods) && disjoint(snap, done), "snap overlaps a button")
+    }
+
+    @Test fun `resize handle sits at the box bottom-right`() {
+        val box = Rect(100, 100, 40, 20)
+        val h = PositionLayout.resizeHandle(box)
+        assertEquals(box.right, h.right); assertEquals(box.bottom, h.bottom)
+        assertTrue(h.width in 1..box.width && h.height in 1..box.height)
+    }
+
+    private fun disjoint(a: Rect, b: Rect) =
+        a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top
+}
+
 private fun Rect.cx() = left + width / 2

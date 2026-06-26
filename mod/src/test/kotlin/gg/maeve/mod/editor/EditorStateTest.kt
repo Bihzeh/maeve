@@ -4,6 +4,7 @@ import gg.maeve.mod.config.Config
 import gg.maeve.mod.module.FontModule
 import gg.maeve.mod.module.HudAnchor
 import gg.maeve.mod.module.ModuleManager
+import gg.maeve.mod.module.hud.CoordsModule
 import gg.maeve.mod.module.hud.FpsModule
 import gg.maeve.mod.platform.GameContext
 import gg.maeve.shared.MaevePalette
@@ -26,10 +27,10 @@ private fun Rect.cx() = left + width / 2
 private fun Rect.cy() = top + height / 2
 
 class EditorStateTest {
-    private fun setup(screenW: Int = 800, screenH: Int = 600, withFont: Boolean = false):
+    private fun setup(screenW: Int = 800, screenH: Int = 600, withFont: Boolean = false, withCoords: Boolean = false):
         Triple<ModuleManager, List<ElementBox>, EditorState> {
         val mgr = ModuleManager(Config(Files.createTempDirectory("editor"))).apply {
-            register(FpsModule()); if (withFont) register(FontModule())
+            register(FpsModule()); if (withCoords) register(CoordsModule()); if (withFont) register(FontModule())
         }
         val boxes = ElementLayout.boxesFor(mgr.hudModules(), ctx(), Measure, screenW, screenH)
         return Triple(mgr, boxes, EditorState())
@@ -266,5 +267,90 @@ class EditorStateTest {
         s.onPress(sw.cx(), sw.cy(), 800, 600, boxes, mgr)
         assertEquals(!before, mgr.hudById("fps")!!.enabled, "switch toggles enabled")
         assertEquals(EditorView.GRID, s.view, "stays on the grid")
+    }
+
+    // --- snap + resize (POSITION) -----------------------------------------
+    private fun boxesOf(mgr: ModuleManager) = ElementLayout.boxesFor(mgr.hudModules(), ctx(), Measure, 800, 600)
+    private fun box(mgr: ModuleManager, id: String) = boxesOf(mgr).first { it.id == id }.rect
+    private fun pressDrag(s: EditorState, mgr: ModuleManager, boxes: List<ElementBox>, from: Rect, toLeft: Int, toTop: Int) {
+        s.onPress(from.cx(), from.cy(), 800, 600, boxes, mgr)
+        s.onDrag(from.cx() + (toLeft - from.left), from.cy() + (toTop - from.top), 800, 600, mgr)
+    }
+
+    @Test fun `snap on aligns box centre to the screen centre`() {
+        val (mgr, boxes, s) = setup()
+        val fps = boxes.first { it.id == "fps" }.rect
+        pressDrag(s, mgr, boxes, fps, (800 - fps.width) / 2 + 3, fps.top)
+        assertEquals((800 - fps.width) / 2, box(mgr, "fps").left, "snapped to horizontal centre")
+        assertTrue(s.activeGuidesX.contains(400), "centre guide recorded")
+    }
+
+    @Test fun `snap off leaves free pixel position`() {
+        val (mgr, boxes, s) = setup()
+        mgr.setSnapEnabled(false)
+        val fps = boxes.first { it.id == "fps" }.rect
+        val target = (800 - fps.width) / 2 + 3
+        pressDrag(s, mgr, boxes, fps, target, fps.top)
+        assertEquals(target, box(mgr, "fps").left, "free, not snapped")
+        assertTrue(s.activeGuidesX.isEmpty())
+    }
+
+    @Test fun `snap aligns to a sibling left edge`() {
+        val (mgr, _, s) = setup(withCoords = true)
+        mgr.setAnchorOffset("coords", HudAnchor.TOP_LEFT, 300, 200)
+        val boxes = boxesOf(mgr)
+        val fps = boxes.first { it.id == "fps" }.rect
+        pressDrag(s, mgr, boxes, fps, 302, fps.top) // 2px right of the sibling's left
+        assertEquals(300, box(mgr, "fps").left, "aligned to sibling left edge")
+    }
+
+    private fun selectThenGrabHandle(s: EditorState, mgr: ModuleManager): Rect {
+        val fps0 = box(mgr, "fps")
+        s.onPress(fps0.cx(), fps0.cy(), 800, 600, boxesOf(mgr), mgr); s.onRelease() // select
+        val h = PositionLayout.resizeHandle(fps0)
+        s.onPress(h.cx(), h.cy(), 800, 600, boxesOf(mgr), mgr) // grab the handle
+        return fps0
+    }
+
+    @Test fun `corner handle grows the scale and pins the top-left`() {
+        val (mgr, _, s) = setup()
+        val fps0 = selectThenGrabHandle(s, mgr)
+        s.onDrag(fps0.right + 60, fps0.bottom + 30, 800, 600, mgr); s.onRelease()
+        assertTrue(mgr.hudById("fps")!!.style.scale > 1.0f, "scaled up")
+        val nb = box(mgr, "fps")
+        assertEquals(fps0.left, nb.left, "top-left x pinned"); assertEquals(fps0.top, nb.top, "top-left y pinned")
+    }
+
+    @Test fun `corner handle shrinks toward the minimum`() {
+        val (mgr, _, s) = setup()
+        val fps0 = selectThenGrabHandle(s, mgr)
+        s.onDrag(fps0.left + 1, fps0.top + 1, 800, 600, mgr); s.onRelease()
+        assertEquals(0.5f, mgr.hudById("fps")!!.style.scale, "clamped to min")
+    }
+
+    @Test fun `corner handle clamps at the maximum`() {
+        val (mgr, _, s) = setup()
+        val fps0 = selectThenGrabHandle(s, mgr)
+        s.onDrag(fps0.left + 4000, fps0.top + 4000, 800, 600, mgr); s.onRelease()
+        assertEquals(3.0f, mgr.hudById("fps")!!.style.scale, "clamped to max")
+    }
+
+    @Test fun `resize does not jump on grab`() {
+        val (mgr, _, s) = setup()
+        val fps0 = selectThenGrabHandle(s, mgr)
+        val h = PositionLayout.resizeHandle(fps0)
+        s.onDrag(h.cx(), h.cy(), 800, 600, mgr) // drag exactly at the grab point
+        assertEquals(1.0f, mgr.hudById("fps")!!.style.scale, "scale unchanged at the grab point")
+    }
+
+    @Test fun `resize keeps a bottom-right element off the top-left anchor`() {
+        val (mgr, _, s) = setup()
+        mgr.setAnchorOffset("fps", HudAnchor.BOTTOM_RIGHT, 10, 10)
+        val fps0 = box(mgr, "fps")
+        s.onPress(fps0.cx(), fps0.cy(), 800, 600, boxesOf(mgr), mgr); s.onRelease()
+        val h = PositionLayout.resizeHandle(fps0)
+        s.onPress(h.cx(), h.cy(), 800, 600, boxesOf(mgr), mgr)
+        s.onDrag(fps0.right + 20, fps0.bottom + 20, 800, 600, mgr)
+        assertTrue(mgr.hudById("fps")!!.anchor != HudAnchor.TOP_LEFT, "anchor not clobbered to TOP_LEFT")
     }
 }

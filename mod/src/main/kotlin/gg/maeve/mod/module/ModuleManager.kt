@@ -60,6 +60,10 @@ class ModuleManager(private val config: Config) {
         (modules[id] as? HudModule)?.let { it.style = it.defaultStyle }
     }
 
+    /** Editor-global snap-to-guides preference (persisted via [config]). */
+    fun snapEnabled(): Boolean = config.isSnapEnabled()
+    fun setSnapEnabled(value: Boolean) = config.setSnapEnabled(value)
+
     fun saveAll() {
         config.snapshot(modules.values)
         config.save()

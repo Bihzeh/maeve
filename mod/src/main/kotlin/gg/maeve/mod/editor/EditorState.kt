@@ -36,6 +36,19 @@ class EditorState {
     private var startTop = 0
     private var dragW = 0
     private var dragH = 0
+    private var resizeId: String? = null
+    private var startScale = 1f
+    private var startD = 1.0
+    private var startFootW = 0
+    private var startFootH = 0
+    private var startSnapX = emptyList<Int>()
+    private var startSnapY = emptyList<Int>()
+
+    /** Alignment guide lines to draw this frame while snapping (empty unless mid-snap-drag). */
+    var activeGuidesX: List<Int> = emptyList()
+        private set
+    var activeGuidesY: List<Int> = emptyList()
+        private set
 
     private var editH = 0f
     private var editS = 0f
@@ -54,14 +67,28 @@ class EditorState {
 
     fun onPress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, boxes: List<ElementBox>, modules: ModuleManager): Boolean =
         when (view) {
-            EditorView.POSITION -> onPositionPress(mouseX, mouseY, screenW, screenH, boxes)
+            EditorView.POSITION -> onPositionPress(mouseX, mouseY, screenW, screenH, boxes, modules)
             EditorView.GRID -> onGridPress(mouseX, mouseY, screenW, screenH, modules)
             EditorView.CUSTOMIZE -> onCustomizePress(mouseX, mouseY, screenW, screenH, modules)
         }
 
-    private fun onPositionPress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, boxes: List<ElementBox>): Boolean {
+    private fun onPositionPress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, boxes: List<ElementBox>, modules: ModuleManager): Boolean {
+        // Resize: grab the selected element's corner handle FIRST (it can overlap a button zone).
+        val selBox = selectedId?.let { sid -> boxes.firstOrNull { it.id == sid }?.rect }
+        if (selBox != null && PositionLayout.resizeHandle(selBox).contains(mouseX, mouseY)) {
+            resizeId = selectedId
+            startScale = modules.hudById(selectedId!!)?.style?.scale ?: 1f
+            startLeft = selBox.left; startTop = selBox.top
+            startFootW = selBox.width; startFootH = selBox.height
+            startMouseX = mouseX; startMouseY = mouseY
+            startD = kotlin.math.hypot((mouseX - selBox.left).toDouble(), (mouseY - selBox.top).toDouble()).coerceAtLeast(1.0)
+            return true
+        }
         if (PositionLayout.doneButton(screenW, screenH).contains(mouseX, mouseY)) { closeRequested = true; return true }
         if (PositionLayout.modsButton(screenW, screenH).contains(mouseX, mouseY)) { view = EditorView.GRID; return true }
+        if (PositionLayout.snapButton(screenW, screenH).contains(mouseX, mouseY)) {
+            modules.setSnapEnabled(!modules.snapEnabled()); dirty = true; return true
+        }
         val id = hitTest(boxes, mouseX, mouseY)
         selectedId = id
         if (id == null) { dragId = null; return false }
@@ -70,6 +97,9 @@ class EditorState {
         startMouseX = mouseX; startMouseY = mouseY
         startLeft = box.left; startTop = box.top
         dragW = box.width; dragH = box.height
+        // Capture sibling edges/centres now (they don't move during this drag) for alignment snapping.
+        startSnapX = boxes.filter { it.id != id }.flatMap { listOf(it.rect.left, it.rect.left + it.rect.width / 2, it.rect.right) }
+        startSnapY = boxes.filter { it.id != id }.flatMap { listOf(it.rect.top, it.rect.top + it.rect.height / 2, it.rect.bottom) }
         return true
     }
 
@@ -134,12 +164,32 @@ class EditorState {
             setPickerValue(ac, rect, mouseX, mouseY); applyEditColor(modules)
             return true
         }
-        if (view != EditorView.POSITION) { dragId = null; return false } // tier contract: element drag is POSITION-only
+        if (view != EditorView.POSITION) { dragId = null; resizeId = null; return false } // tier contract: drag is POSITION-only
+        resizeId?.let { rid ->
+            val d1 = kotlin.math.hypot((mouseX - startLeft).toDouble(), (mouseY - startTop).toDouble())
+            val newScale = (startScale * (d1 / startD)).toFloat().coerceIn(0.5f, 3.0f) // 1.0 at the grab point
+            val ratio = newScale / startScale
+            val newFootW = (startFootW * ratio).roundToInt().coerceAtLeast(1)
+            val newFootH = (startFootH * ratio).roundToInt().coerceAtLeast(1)
+            val box = Rect(startLeft, startTop, newFootW, newFootH) // top-left pinned; size grows from it
+            val anchor = EditorAnchor.anchorFromPosition(box, screenW, screenH) // derive anchor (keeps resolution-independence)
+            val (ox, oy) = EditorAnchor.offsetForAnchor(anchor, box, screenW, screenH)
+            modules.updateStyle(rid) { it.copy(scale = newScale) }
+            modules.setAnchorOffset(rid, anchor, ox, oy)
+            dirty = true
+            return true
+        }
         val id = dragId ?: return false
         val maxLeft = (screenW - dragW).coerceAtLeast(0)
         val maxTop = (screenH - dragH).coerceAtLeast(0)
-        val left = (startLeft + (mouseX - startMouseX)).coerceIn(0, maxLeft)
-        val top = (startTop + (mouseY - startMouseY)).coerceIn(0, maxTop)
+        var left = (startLeft + (mouseX - startMouseX)).coerceIn(0, maxLeft)
+        var top = (startTop + (mouseY - startMouseY)).coerceIn(0, maxTop)
+        var gx: Int? = null; var gy: Int? = null
+        if (modules.snapEnabled()) {
+            val (nl, g1) = snapAxis(left, dragW, startSnapX + listOf(0, screenW / 2, screenW)); left = nl; gx = g1
+            val (nt, g2) = snapAxis(top, dragH, startSnapY + listOf(0, screenH / 2, screenH)); top = nt; gy = g2
+        }
+        activeGuidesX = listOfNotNull(gx); activeGuidesY = listOfNotNull(gy)
         val moved = Rect(left, top, dragW, dragH)
         val anchor = EditorAnchor.anchorFromPosition(moved, screenW, screenH)
         val (ox, oy) = EditorAnchor.offsetForAnchor(anchor, moved, screenW, screenH)
@@ -149,9 +199,11 @@ class EditorState {
     }
 
     fun onRelease(): Boolean {
-        val was = dragId != null || activeColor != null
+        val was = dragId != null || activeColor != null || resizeId != null
         dragId = null
         activeColor = null
+        resizeId = null
+        activeGuidesX = emptyList(); activeGuidesY = emptyList()
         return was
     }
 
@@ -179,7 +231,17 @@ class EditorState {
     fun pruneSelection(boxes: List<ElementBox>) {
         if (view == EditorView.CUSTOMIZE) return // keep the popup's target stable
         val sel = selectedId ?: return
-        if (boxes.none { it.id == sel }) { selectedId = null; dragId = null; activeColor = null }
+        if (boxes.none { it.id == sel }) { selectedId = null; dragId = null; activeColor = null; resizeId = null }
+    }
+
+    private fun snapAxis(pos: Int, size: Int, cands: List<Int>): Pair<Int, Int?> {
+        var best = Int.MAX_VALUE; var guide: Int? = null
+        val lines = intArrayOf(pos, pos + size / 2, pos + size)
+        for (c in cands) for (l in lines) {
+            val d = c - l
+            if (kotlin.math.abs(d) <= SNAP && kotlin.math.abs(d) < kotlin.math.abs(best)) { best = d; guide = c }
+        }
+        return if (guide == null) pos to null else (pos + best) to guide
     }
 
     private fun backToGrid() { view = EditorView.GRID; selectedId = null; activeColor = null; hexFocused = false }
@@ -246,5 +308,6 @@ class EditorState {
 
     private companion object {
         val PICKERS = setOf("sv", "hue", "alpha")
+        const val SNAP = 5
     }
 }

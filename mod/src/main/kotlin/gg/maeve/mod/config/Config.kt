@@ -39,9 +39,15 @@ private data class ModuleState(
 )
 
 @Serializable
+private data class EditorSettings(
+    val snapEnabled: Boolean = true,
+)
+
+@Serializable
 private data class ConfigData(
     val schema: Int = 2,
     val modules: MutableMap<String, ModuleState> = mutableMapOf(),
+    var editor: EditorSettings? = null, // editor-global prefs, orthogonal to per-module state
 )
 
 /**
@@ -62,6 +68,13 @@ class Config(private val dir: Path) {
         if (!file.exists()) return
         runCatching { data = json.decodeFromString<ConfigData>(file.readText()) }
             .onFailure { LOG.warn("Maeve: config parse failed, using defaults", it) }
+    }
+
+    /** Whether the editor snaps dragged elements to alignment guides (default on). */
+    fun isSnapEnabled(): Boolean = data.editor?.snapEnabled ?: true
+
+    fun setSnapEnabled(value: Boolean) {
+        data.editor = (data.editor ?: EditorSettings()).copy(snapEnabled = value)
     }
 
     /** Restore persisted state onto a freshly registered module. */

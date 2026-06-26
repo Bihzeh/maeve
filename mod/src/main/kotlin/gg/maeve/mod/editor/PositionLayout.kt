@@ -7,11 +7,13 @@ package gg.maeve.mod.editor
  */
 object PositionLayout {
     const val LOGO_SCALE = 2.5f
-    private const val LOGO_W = 140
-    private const val LOGO_H = 28
+    private const val LOGO_W = 84
+    private const val LOGO_H = 76
     private const val BAR_H = 16
     private const val MODS_W = 96
     private const val DONE_W = 60
+    private const val SNAP_W = 84
+    const val HANDLE = 10
 
     fun logoRect(screenW: Int, screenH: Int): Rect =
         Rect((screenW - LOGO_W) / 2, screenH / 6, LOGO_W, LOGO_H)
@@ -23,4 +25,10 @@ object PositionLayout {
 
     fun doneButton(screenW: Int, screenH: Int): Rect =
         Rect(screenW - DONE_W - 6, screenH - BAR_H - 6, DONE_W, BAR_H)
+
+    /** Bottom-left snap-mode toggle (mirrors [doneButton] on the right). */
+    fun snapButton(screenW: Int, screenH: Int): Rect = Rect(6, screenH - BAR_H - 6, SNAP_W, BAR_H)
+
+    /** Resize grip at a selected element's bottom-right corner. */
+    fun resizeHandle(box: Rect): Rect = Rect(box.right - HANDLE, box.bottom - HANDLE, HANDLE, HANDLE)
 }

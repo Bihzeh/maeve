@@ -64,6 +64,15 @@ class EditorRenderer {
             }
             canvas.border(b.rect.left - 2, b.rect.top - 2, b.rect.width + 4, b.rect.height + 4, color)
         }
+        for (gx in state.activeGuidesX) canvas.fill(gx, 0, 1, screenH, MaevePalette.gold)       // alignment guides
+        for (gy in state.activeGuidesY) canvas.fill(0, gy, screenW, 1, MaevePalette.gold)
+        state.selectedId?.let { sid ->                                                            // resize grip
+            boxes.firstOrNull { it.id == sid }?.rect?.let { b ->
+                val h = PositionLayout.resizeHandle(b)
+                canvas.fill(h.left, h.top, h.width, h.height, MaevePalette.gold)
+                canvas.border(h.left, h.top, h.width, h.height, white)
+            }
+        }
         val hint = "Drag to reposition  ·  Mods to customize  ·  Esc / Done to save"
         canvas.drawText((screenW - canvas.textWidth(hint)) / 2, screenH - 16, hint, MaevePalette.text2) // bottom-center, clear of corner HUD
         drawLogo(canvas, screenW, screenH)
@@ -71,19 +80,14 @@ class EditorRenderer {
         val done = PositionLayout.doneButton(screenW, screenH)
         button(canvas, mods, "Mods", primary = true, hover = mods.contains(mouseX, mouseY))
         button(canvas, done, "Done", primary = false, hover = done.contains(mouseX, mouseY))
+        val snap = PositionLayout.snapButton(screenW, screenH)
+        button(canvas, snap, if (modules.snapEnabled()) "Snap: On" else "Snap: Off", primary = false, hover = snap.contains(mouseX, mouseY))
     }
 
     private fun drawLogo(canvas: EditorCanvas, screenW: Int, screenH: Int) {
-        val r = PositionLayout.logoRect(screenW, screenH)
-        val cx = r.left + r.width / 2
-        val cy = r.top + r.height / 2
-        val text = "MAEVE"
-        val tw = canvas.textWidth(text)
-        canvas.withScale(PositionLayout.LOGO_SCALE, cx, cy) {
-            canvas.drawText(-tw / 2, -canvas.lineHeight / 2, text, MaevePalette.gold)
+        for (b in LogoArt.bands(PositionLayout.logoRect(screenW, screenH))) {
+            canvas.fill(b.rect.left, b.rect.top, b.rect.width, b.rect.height, b.color)
         }
-        val ruleW = (tw * PositionLayout.LOGO_SCALE).toInt()
-        canvas.fill(cx - ruleW / 2, r.bottom + 2, ruleW, 1, MaevePalette.gold)
     }
 
     // ---- GRID --------------------------------------------------------------

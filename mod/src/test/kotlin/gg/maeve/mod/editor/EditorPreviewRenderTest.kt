@@ -99,10 +99,18 @@ class EditorPreviewRenderTest {
         val w = 520; val h = 360
         val renderer = EditorRenderer()
 
-        // POSITION
+        // POSITION (with a selected element -> resize handle, and an active alignment guide)
         run {
             val (img, canvas) = frame(w, h); val mgr = fullManager(); val st = EditorState()
-            renderer.render(canvas, w, h, w - 40, 30, ctx(), mgr, st) // mouse near top-right
+            val measurer = object : TextMeasurer {
+                override fun width(text: String) = canvas.textWidth(text)
+                override val lineHeight get() = canvas.lineHeight
+            }
+            val boxes = ElementLayout.boxesFor(mgr.hudModules(), ctx(), measurer, w, h)
+            val fps = boxes.first { it.id == "fps" }.rect
+            st.onPress(fps.left + fps.width / 2, fps.top + fps.height / 2, w, h, boxes, mgr) // select fps
+            st.onDrag(w / 2 + 2, fps.top + fps.height / 2, w, h, mgr)                        // snap centre -> guide
+            renderer.render(canvas, w, h, -1, -1, ctx(), mgr, st)
             assertTrue(write(img, "1-position.png").length() > 0)
         }
         // GRID

@@ -46,8 +46,10 @@ Proprietary — see top-level `LICENSE` (decision: ADR-0009).
 Shipped in `launcher/src/main/resources/fonts/`. All SIL Open Font License 1.1 —
 freely bundleable and redistributable.
 
-| Font | License | Source |
-|---|---|---|
-| Geist | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/geist |
-| Geist Mono | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/geistmono |
-| Marcellus | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/marcellus |
+| Font | Role | License | Source |
+|---|---|---|---|
+| Space Grotesk | Display / headings / wordmark | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/spacegrotesk |
+| Manrope | Titles (Bold) + body/UI (Medium) | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/manrope |
+| Geist Mono | Codes / numerics | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/geistmono |
+
+Full OFL-1.1 texts are vendored alongside the fonts (`*-OFL.txt`).

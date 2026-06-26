@@ -65,7 +65,7 @@ fun HomeScreen(vm: LauncherViewModel) {
                     VersionRender(Versions.MINECRAFT, Modifier.weight(1f).fillMaxHeight())
                     Column(Modifier.weight(1f).padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("FEATURED", color = Maeve.gold, letterSpacing = 2.sp, style = MaterialTheme.typography.labelSmall)
-                        Text("Minecraft ${Versions.MINECRAFT}, tuned.", fontFamily = MaeveFonts.Marcellus, fontSize = 28.sp, color = MaterialTheme.colorScheme.onBackground)
+                        Text("Minecraft ${Versions.MINECRAFT}, tuned.", fontFamily = MaeveFonts.Display, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 28.sp, color = MaterialTheme.colorScheme.onBackground)
                         Text("Sodium and Lithium bundled, an in-game HUD, and a launcher that stays out of your way.", color = Maeve.text2, style = MaterialTheme.typography.bodyMedium)
                         MaeveButton("Read the notes", { }, variant = ButtonVariant.Secondary)
                     }

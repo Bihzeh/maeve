@@ -42,7 +42,7 @@ fun VersionRender(version: String, modifier: Modifier = Modifier) {
                 MaeveMark(modifier = Modifier.align(Alignment.Center), size = 140.dp, color = Color(0x408B6DFF), gem = Color(0x40E2B45C))
                 Column(Modifier.align(Alignment.BottomStart).padding(18.dp)) {
                     Text("MINECRAFT", color = Maeve.gold, letterSpacing = 2.sp, style = MaterialTheme.typography.labelSmall)
-                    Text(version, fontFamily = MaeveFonts.Marcellus, fontSize = 46.sp, color = MaterialTheme.colorScheme.onBackground)
+                    Text(version, fontFamily = MaeveFonts.Display, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 46.sp, color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }

@@ -4,16 +4,32 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 
-/** Bundled fonts (OFL/MIT). Geist + Geist Mono are variable; weights are requested via
- *  FontWeight (the desktop loader selects/synthesizes from the variable file). */
+/**
+ * Bundled fonts (OFL), matching the Maeve design system:
+ *  - [Display] Space Grotesk — display, wordmark and headings.
+ *  - [Sans] Manrope — titles (Bold) and body/UI (Medium).
+ *  - [Mono] Geist Mono — codes / numerics.
+ * All three are variable (wght axis); weights are requested via FontWeight and the desktop
+ * loader selects/synthesizes from the single variable file.
+ */
 object MaeveFonts {
-    val Geist: FontFamily = FontFamily(
-        Font("fonts/Geist.ttf", FontWeight.Light),
-        Font("fonts/Geist.ttf", FontWeight.Normal),
-        Font("fonts/Geist.ttf", FontWeight.Medium),
-        Font("fonts/Geist.ttf", FontWeight.SemiBold),
-        Font("fonts/Geist.ttf", FontWeight.Bold),
+    val Display: FontFamily = FontFamily(
+        Font("fonts/SpaceGrotesk.ttf", FontWeight.Light),
+        Font("fonts/SpaceGrotesk.ttf", FontWeight.Normal),
+        Font("fonts/SpaceGrotesk.ttf", FontWeight.Medium),
+        Font("fonts/SpaceGrotesk.ttf", FontWeight.SemiBold),
+        Font("fonts/SpaceGrotesk.ttf", FontWeight.Bold),
     )
-    val Mono: FontFamily = FontFamily(Font("fonts/GeistMono.ttf", FontWeight.Normal), Font("fonts/GeistMono.ttf", FontWeight.Medium))
-    val Marcellus: FontFamily = FontFamily(Font("fonts/Marcellus.ttf", FontWeight.Normal))
+    val Sans: FontFamily = FontFamily(
+        Font("fonts/Manrope.ttf", FontWeight.Light),
+        Font("fonts/Manrope.ttf", FontWeight.Normal),
+        Font("fonts/Manrope.ttf", FontWeight.Medium),
+        Font("fonts/Manrope.ttf", FontWeight.SemiBold),
+        Font("fonts/Manrope.ttf", FontWeight.Bold),
+        Font("fonts/Manrope.ttf", FontWeight.ExtraBold),
+    )
+    val Mono: FontFamily = FontFamily(
+        Font("fonts/GeistMono.ttf", FontWeight.Normal),
+        Font("fonts/GeistMono.ttf", FontWeight.Medium),
+    )
 }

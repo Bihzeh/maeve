@@ -53,7 +53,7 @@ private fun Sidebar(vm: LauncherViewModel) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(bottom = 18.dp, start = 4.dp)) {
             MaeveMark(size = 26.dp)
-            Text("Maeve", fontFamily = MaeveFonts.Marcellus, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground)
+            Text("Maeve", fontFamily = MaeveFonts.Display, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground)
         }
         NavItem("Home", vm.screen == Screen.HOME) { vm.screen = Screen.HOME }
         NavItem("Mods", vm.screen == Screen.MODS) { vm.screen = Screen.MODS }

@@ -89,7 +89,7 @@ class LauncherViewModel(private val scope: CoroutineScope) {
 
     fun signIn() {
         val clientId = AuthConfig.clientId()
-        if (clientId == null) { signInError = "Set MAEVE_AZURE_CLIENT_ID to your approved Azure app id."; return }
+        if (clientId == null) { signInError = "No Azure client ID configured."; return } // unreachable: AuthConfig has a baked-in default
         signInBusy = true; signInError = null
         scope.launch(Dispatchers.IO) {
             runCatching {

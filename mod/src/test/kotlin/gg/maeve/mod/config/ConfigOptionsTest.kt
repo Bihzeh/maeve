@@ -1,6 +1,8 @@
 package gg.maeve.mod.config
 
 import gg.maeve.mod.module.hud.CpsModule
+import gg.maeve.mod.module.hud.KeystrokesModule
+import kotlin.test.assertEquals
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -15,5 +17,14 @@ class ConfigOptionsTest {
         assertTrue(restored.option("right"), "default before load")
         Config(dir).apply { load(); applyTo(restored) }
         assertFalse(restored.option("right"), "persisted option restored")
+    }
+
+    @Test fun `module colour options round-trip through config`() {
+        val dir = Files.createTempDirectory("cfg")
+        val ks = KeystrokesModule().also { it.setColorOption("box", 0xFF010203.toInt()) }
+        Config(dir).apply { snapshot(listOf(ks)); save() }
+        val restored = KeystrokesModule()
+        Config(dir).apply { load(); applyTo(restored) }
+        assertEquals(0xFF010203.toInt(), restored.colorOption("box"), "box colour restored")
     }
 }

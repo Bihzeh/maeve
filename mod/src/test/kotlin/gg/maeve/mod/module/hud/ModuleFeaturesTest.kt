@@ -3,6 +3,7 @@ package gg.maeve.mod.module.hud
 import gg.maeve.mod.platform.GameContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 private fun ctx(left: Int = 0, right: Int = 0, jump: Boolean = false, yaw: Float = 0f, inWorld: Boolean = true) =
@@ -57,5 +58,35 @@ class CompassFormatTest {
         // MC yaw -90 = facing east
         val tape = HudFormat.compass(-90f)[0]
         assertEquals('E', tape[tape.length / 2])
+    }
+
+    @Test fun `keystrokes exposes independent colour targets`() {
+        val keys = KeystrokesModule().colorTargets().map { it.key }
+        assertTrue(keys.containsAll(listOf("box", "letter", "pressed", "boxOutline", "letterOutline")))
+    }
+
+    @Test fun `keystrokes box outline adds border fills`() {
+        fun fills(outline: Boolean): Int {
+            val m = KeystrokesModule().apply { setOption("space", false); setOption("boxOutlineOn", outline) }
+            val canvas = gg.maeve.mod.FakeHudCanvas()
+            gg.maeve.mod.render.HudModuleRender.draw(canvas, m, ctx())
+            return canvas.fills.size
+        }
+        assertTrue(fills(true) > fills(false), "outline draws extra border fills")
+    }
+
+    @Test fun `keystrokes uses the manual letter colour when auto is off`() {
+        val m = KeystrokesModule().apply { setOption("space", false); setOption("autoLetter", false); setColorOption("letter", 0xFF00FF00.toInt()) }
+        val canvas = gg.maeve.mod.FakeHudCanvas()
+        gg.maeve.mod.render.HudModuleRender.draw(canvas, m, ctx())
+        assertTrue(canvas.draws.any { it.color == 0xFF00FF00.toInt() }, "letters drawn in the chosen colour")
+    }
+
+    @Test fun `editing the letter colour engages manual letter mode`() {
+        val m = KeystrokesModule()
+        assertTrue(m.option("autoLetter"), "auto by default")
+        m.setTargetColor("letter", 0xFF00FF00.toInt())
+        assertFalse(m.option("autoLetter"), "picking a letter colour engages manual mode")
+        assertEquals(0xFF00FF00.toInt(), m.colorOption("letter"))
     }
 }

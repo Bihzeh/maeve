@@ -7,6 +7,7 @@ import gg.maeve.mod.module.ModuleManager
 import gg.maeve.mod.module.hud.CoordsModule
 import gg.maeve.mod.module.hud.CpsModule
 import gg.maeve.mod.module.hud.FpsModule
+import gg.maeve.mod.module.hud.KeystrokesModule
 import gg.maeve.mod.platform.GameContext
 import gg.maeve.shared.MaevePalette
 import java.nio.file.Files
@@ -28,10 +29,10 @@ private fun Rect.cx() = left + width / 2
 private fun Rect.cy() = top + height / 2
 
 class EditorStateTest {
-    private fun setup(screenW: Int = 800, screenH: Int = 600, withFont: Boolean = false, withCoords: Boolean = false, withCps: Boolean = false):
+    private fun setup(screenW: Int = 800, screenH: Int = 600, withFont: Boolean = false, withCoords: Boolean = false, withCps: Boolean = false, withKeystrokes: Boolean = false):
         Triple<ModuleManager, List<ElementBox>, EditorState> {
         val mgr = ModuleManager(Config(Files.createTempDirectory("editor"))).apply {
-            register(FpsModule()); if (withCoords) register(CoordsModule()); if (withCps) register(CpsModule()); if (withFont) register(FontModule())
+            register(FpsModule()); if (withCoords) register(CoordsModule()); if (withCps) register(CpsModule()); if (withKeystrokes) register(KeystrokesModule()); if (withFont) register(FontModule())
         }
         val boxes = ElementLayout.boxesFor(mgr.hudModules(), ctx(), Measure, screenW, screenH)
         return Triple(mgr, boxes, EditorState())
@@ -51,7 +52,7 @@ class EditorStateTest {
     }
 
     private fun control(id: String): Rect =
-        CustomizeLayout.controlRect(CustomizeLayout.popupRect(800, 600, true), id)!!
+        CustomizeLayout.controlRect(CustomizeLayout.popupRect(800, 600, true, 1, 0), id, 1, 0)!!
 
     private fun selectFps(s: EditorState, boxes: List<ElementBox>, mgr: ModuleManager) =
         openCustomize(s, boxes, mgr, "fps")
@@ -358,8 +359,8 @@ class EditorStateTest {
     @Test fun `customize toggles a module option in place`() {
         val (mgr, boxes, s) = setup(withCps = true)
         openCustomize(s, boxes, mgr, "cps")
-        val popup = CustomizeLayout.popupRect(800, 600, true)
-        val rows = CustomizeLayout.optionRows(popup, mgr.hudById("cps")!!.toggles.size)
+        val popup = CustomizeLayout.popupRect(800, 600, true, 1, 1)
+        val rows = CustomizeLayout.optionRows(popup, 1, mgr.hudById("cps")!!.toggles.size)
         val before = mgr.hudById("cps")!!.option("right")
         s.onPress(rows[0].cx(), rows[0].cy(), 800, 600, boxes, mgr)
         assertEquals(!before, mgr.hudById("cps")!!.option("right"), "option toggled")
@@ -369,12 +370,30 @@ class EditorStateTest {
     @Test fun `toggling an option clears hex focus`() {
         val (mgr, boxes, s) = setup(withCps = true)
         openCustomize(s, boxes, mgr, "cps")
-        val popup = CustomizeLayout.popupRect(800, 600, true, mgr.hudById("cps")!!.toggles.size)
-        val hex = CustomizeLayout.controlRect(popup, "hex")!!
+        val popup = CustomizeLayout.popupRect(800, 600, true, 1, mgr.hudById("cps")!!.toggles.size)
+        val hex = CustomizeLayout.controlRect(popup, "hex", 1, 1)!!
         s.onPress(hex.left + 2, hex.top + 2, 800, 600, boxes, mgr)
         assertTrue(s.isHexFocused)
-        val row = CustomizeLayout.optionRows(popup, 1)[0]
+        val row = CustomizeLayout.optionRows(popup, 1, 1)[0]
         s.onPress(row.cx(), row.cy(), 800, 600, boxes, mgr)
         assertFalse(s.isHexFocused, "hex focus cleared by option toggle")
+    }
+
+    @Test fun `selecting a colour target routes the picker to that colour`() {
+        val (mgr, boxes, s) = setup(withKeystrokes = true)
+        openCustomize(s, boxes, mgr, "keystrokes")
+        val ks = mgr.hudById("keystrokes")!!
+        assertEquals("box", s.selectedTargetKey, "first target selected by default")
+        val tc = ks.colorTargets().size; val oc = ks.toggles.size
+        val popup = CustomizeLayout.popupRect(800, 600, true, tc, oc)
+        val li = ks.colorTargets().indexOfFirst { it.key == "letter" }
+        val chip = CustomizeLayout.targetChips(popup, tc)[li]
+        s.onPress(chip.cx(), chip.cy(), 800, 600, boxes, mgr)
+        assertEquals("letter", s.selectedTargetKey, "chip selects the target")
+        val boxBefore = ks.colorOption("box")
+        val red = CustomizeLayout.controlRect(popup, "swatch:6", tc, oc)!! // 0xFFFF5555
+        s.onPress(red.cx(), red.cy(), 800, 600, boxes, mgr)
+        assertEquals(boxBefore, ks.colorOption("box"), "box colour untouched")
+        assertEquals(MaeveColor.rgbOf(0xFFFF5555.toInt()), MaeveColor.rgbOf(ks.colorOption("letter")), "letter recoloured")
     }
 }

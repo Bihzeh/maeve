@@ -128,7 +128,7 @@ class EditorRenderer {
         val sel = state.customizing ?: return
         val module = modules.byId(sel) ?: return
         val hud = modules.hudById(sel)
-        val popup = CustomizeLayout.popupRect(screenW, screenH, hud != null, hud?.toggles?.size ?: 0)
+        val popup = CustomizeLayout.popupRect(screenW, screenH, hud != null, hud?.colorTargets()?.size ?: 0, hud?.toggles?.size ?: 0)
         panel(canvas, popup)
         // left-aligned title bar (so a long name never collides with the close button)
         canvas.gradientV(popup.left + 1, popup.top + 1, popup.width - 2, 18, lighten(MaevePalette.elevated, 0.08f), MaevePalette.elevated)
@@ -148,10 +148,15 @@ class EditorRenderer {
 
     private fun drawStyleControls(canvas: EditorCanvas, module: HudModule, popup: Rect, state: EditorState) {
         val st = module.style
-        val c = CustomizeLayout.controls(popup).associateBy { it.id }
+        val targets = module.colorTargets()
+        val tc = targets.size
+        val oc = module.toggles.size
+        val active = module.targetColor(state.selectedTargetKey) // the colour the picker is editing
+        val c = CustomizeLayout.controls(popup, tc, oc).associateBy { it.id }
+
         c["preview"]?.rect?.let { r ->
             checker(canvas, r.left, r.top, r.width, r.height)
-            canvas.fill(r.left, r.top, r.width, r.height, st.color)
+            canvas.fill(r.left, r.top, r.width, r.height, active)
             canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
         }
         c["sv"]?.rect?.let { r -> drawSvSquare(canvas, r, state) }
@@ -160,14 +165,38 @@ class EditorRenderer {
         c["hex"]?.rect?.let { r ->
             canvas.fill(r.left, r.top, r.width, r.height, darken(MaevePalette.elevated, 0.12f))
             canvas.border(r.left, r.top, r.width, r.height, if (state.isHexFocused) MaevePalette.gold else MaevePalette.outline)
-            val text = if (state.isHexFocused) "#" + state.hexText + "_" else HexColor.encode(st.color)
+            val text = if (state.isHexFocused) "#" + state.hexText + "_" else HexColor.encode(active)
             canvas.drawText(r.left + 4, r.top + 2, text, MaevePalette.text)
         }
-        // enable + style toggles as switch rows
+
+        // Colour-target chips: pick which colour the one picker edits.
+        val chips = CustomizeLayout.targetChips(popup, tc)
+        targets.forEachIndexed { i, t ->
+            val r = chips[i]; val on = t.key == state.selectedTargetKey
+            canvas.fill(r.left, r.top, r.width, r.height, if (on) lighten(MaevePalette.elevated, 0.12f) else MaevePalette.elevated)
+            canvas.border(r.left, r.top, r.width, r.height, if (on) MaevePalette.gold else MaevePalette.outline)
+            canvas.drawText(r.left + 5, r.top + 3, t.label, if (on) white else MaevePalette.text2)
+            val sw = 12; val sx = r.right - sw - 4; val sy = r.top + 2; val sh = r.height - 4
+            checker(canvas, sx, sy, sw, sh)
+            canvas.fill(sx, sy, sw, sh, module.targetColor(t.key)) // full ARGB so translucency shows
+            canvas.border(sx, sy, sw, sh, MaevePalette.outline)
+        }
+
+        // Module option toggles.
+        if (oc > 0) {
+            val rows = CustomizeLayout.optionRows(popup, tc, oc)
+            module.toggles.forEachIndexed { i, t ->
+                val r = rows[i]; val on = module.option(t.key)
+                canvas.drawText(r.left + 5, r.top + 3, t.label, if (on) white else MaevePalette.text2)
+                switch(canvas, Rect(r.right - 24, r.top + 1, 22, r.height - 2), on)
+            }
+        }
+
+        // Generic style toggles (visible/bold/italic).
         for (id in TOGGLE_ROW) {
             val r = c[id]?.rect ?: continue
             val on = toggleState(id, module, st)
-            canvas.drawText(r.left + 2, r.top + 3, label(id), if (on) white else MaevePalette.text2)
+            canvas.drawText(r.left + 5, r.top + 3, label(id), if (on) white else MaevePalette.text2)
             switch(canvas, Rect(r.right - 24, r.top + 1, 22, r.height - 2), on)
         }
         val sm = c["scale-"]?.rect; val sp = c["scale+"]?.rect
@@ -176,21 +205,13 @@ class EditorRenderer {
             val v = "x%.2f".format(st.scale)
             canvas.drawText((sm.right + sp.left) / 2 - canvas.textWidth(v) / 2, sm.top + 3, v, MaevePalette.text2)
         }
-        c["reset"]?.rect?.let { button(canvas, it, "Reset style") }
-        val opts = module.toggles
-        if (opts.isNotEmpty()) {
-            val rows = CustomizeLayout.optionRows(popup, opts.size)
-            canvas.drawText(rows[0].left, rows[0].top - 11, "Options", MaevePalette.gold)
-            opts.forEachIndexed { i, t ->
-                val r = rows[i]; val on = module.option(t.key)
-                canvas.drawText(r.left + 2, r.top + 3, t.label, if (on) white else MaevePalette.text2)
-                switch(canvas, Rect(r.right - 24, r.top + 1, 22, r.height - 2), on)
-            }
-        }
+        c["reset"]?.rect?.let { button(canvas, it, "Reset") }
+
+        // Swatches apply to the active target.
         CustomizeLayout.SWATCHES.forEachIndexed { i, col ->
             c["swatch:$i"]?.rect?.let { r ->
                 canvas.fill(r.left, r.top, r.width, r.height, black or MaeveColor.rgbOf(col))
-                val selected = MaeveColor.rgbOf(st.color) == MaeveColor.rgbOf(col)
+                val selected = MaeveColor.rgbOf(active) == MaeveColor.rgbOf(col)
                 if (selected) canvas.border(r.left - 1, r.top - 1, r.width + 2, r.height + 2, MaevePalette.gold)
                 else canvas.border(r.left, r.top, r.width, r.height, MaevePalette.outline)
             }
@@ -321,6 +342,6 @@ class EditorRenderer {
     private fun darken(c: Int, f: Float) = blend(c, black, f)
 
     private companion object {
-        val TOGGLE_ROW = listOf("visible", "bold", "italic", "underline", "strike", "shadow", "background")
+        val TOGGLE_ROW = listOf("visible", "bold", "italic")
     }
 }

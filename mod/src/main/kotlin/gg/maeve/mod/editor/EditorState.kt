@@ -57,6 +57,8 @@ class EditorState {
     private var activeColor: String? = null // "sv" | "hue" | "alpha" while dragging a picker
     private var hexFocused = false
     private var hexBuffer = ""
+    var selectedTargetKey: String = "style"
+        private set
 
     val colorH get() = editH
     val colorS get() = editS
@@ -117,7 +119,7 @@ class EditorState {
             selectedId = m.id
             view = EditorView.CUSTOMIZE
             hexFocused = false; activeColor = null
-            if (modules.hudById(m.id) != null) loadColor(modules)
+            modules.hudById(m.id)?.let { selectedTargetKey = it.colorTargets().firstOrNull()?.key ?: "style"; loadColor(modules) }
             return true
         }
         if (GridLayout.panelRect(screenW, screenH, mods.size).contains(mouseX, mouseY)) return true // inside panel, not a card
@@ -128,19 +130,27 @@ class EditorState {
     private fun onCustomizePress(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, modules: ModuleManager): Boolean {
         val sel = selectedId
         val isHud = sel != null && modules.hudById(sel) != null
-        val popup = CustomizeLayout.popupRect(screenW, screenH, isHud, modules.hudById(sel ?: "")?.toggles?.size ?: 0)
+        val popup = CustomizeLayout.popupRect(screenW, screenH, isHud, targetCount(modules, sel), optCount(modules, sel))
         if (CustomizeLayout.closeButton(popup).contains(mouseX, mouseY)) { backToGrid(); return true }
         if (sel == null) return true
         if (isHud) {
-            val ctrl = CustomizeLayout.controls(popup).firstOrNull { it.rect.contains(mouseX, mouseY) }
+            val mod = modules.hudById(sel)!!
+            val tc = mod.colorTargets().size
+            val oc = mod.toggles.size
+            // colour-target chip selection (picks which colour the picker edits)
+            val ti = CustomizeLayout.targetChips(popup, tc).indexOfFirst { it.contains(mouseX, mouseY) }
+            if (ti >= 0) {
+                selectedTargetKey = mod.colorTargets()[ti].key; loadColor(modules)
+                activeColor = null; hexFocused = false
+                return true
+            }
+            val ctrl = CustomizeLayout.controls(popup, tc, oc).firstOrNull { it.rect.contains(mouseX, mouseY) }
             if (ctrl == null) {
-                val mod = modules.hudById(sel)
-                val opts = mod?.toggles ?: emptyList()
-                if (opts.isNotEmpty()) {
-                    val oi = CustomizeLayout.optionRows(popup, opts.size).indexOfFirst { it.contains(mouseX, mouseY) }
+                if (mod.toggles.isNotEmpty()) {
+                    val oi = CustomizeLayout.optionRows(popup, tc, oc).indexOfFirst { it.contains(mouseX, mouseY) }
                     if (oi >= 0) {
-                        val key = opts[oi].key
-                        modules.setOption(sel, key, !mod!!.option(key)); dirty = true
+                        val key = mod.toggles[oi].key
+                        modules.setOption(sel, key, !mod.option(key)); dirty = true
                         hexFocused = false; hexBuffer = ""; activeColor = null
                         return true
                     }
@@ -170,8 +180,9 @@ class EditorState {
 
     fun onDrag(mouseX: Int, mouseY: Int, screenW: Int, screenH: Int, modules: ModuleManager): Boolean {
         activeColor?.let { ac ->
-            val popup = CustomizeLayout.popupRect(screenW, screenH, true, selectedId?.let { modules.hudById(it)?.toggles?.size } ?: 0)
-            val rect = CustomizeLayout.controlRect(popup, ac) ?: return true
+            val tc = targetCount(modules, selectedId); val oc = optCount(modules, selectedId)
+            val popup = CustomizeLayout.popupRect(screenW, screenH, true, tc, oc)
+            val rect = CustomizeLayout.controlRect(popup, ac, tc, oc) ?: return true
             setPickerValue(ac, rect, mouseX, mouseY); applyEditColor(modules)
             return true
         }
@@ -255,6 +266,9 @@ class EditorState {
         return if (guide == null) pos to null else (pos + best) to guide
     }
 
+    private fun targetCount(modules: ModuleManager, sel: String?) = sel?.let { modules.hudById(it)?.colorTargets()?.size } ?: 0
+    private fun optCount(modules: ModuleManager, sel: String?) = sel?.let { modules.hudById(it)?.toggles?.size } ?: 0
+
     private fun backToGrid() { view = EditorView.GRID; selectedId = null; activeColor = null; hexFocused = false }
 
     private fun setPickerValue(id: String, r: Rect, mx: Int, my: Int) {
@@ -270,12 +284,12 @@ class EditorState {
     private fun applyEditColor(modules: ModuleManager) {
         val sel = selectedId ?: return
         val color = MaeveColor.argb(editA, MaeveColor.hsvToRgb(editH, editS, editV))
-        modules.updateStyle(sel) { it.copy(color = color) }
+        modules.setTargetColor(sel, selectedTargetKey, color)
         dirty = true
     }
 
     private fun loadColor(modules: ModuleManager) {
-        val c = selectedId?.let { modules.hudById(it)?.style?.color } ?: return
+        val c = selectedId?.let { modules.hudById(it)?.targetColor(selectedTargetKey) } ?: return
         val (h, s, v) = MaeveColor.rgbToHsv(MaeveColor.rgbOf(c))
         editH = h; editS = s; editV = v; editA = MaeveColor.alphaOf(c)
         hexFocused = false; hexBuffer = ""
@@ -286,7 +300,7 @@ class EditorState {
         val sel = selectedId ?: return
         // 6-digit codes keep the element's current alpha; 8-digit codes set alpha explicitly.
         val argb = if (hexBuffer.length == 6) MaeveColor.argb(editA, MaeveColor.rgbOf(parsed)) else parsed
-        modules.updateStyle(sel) { it.copy(color = argb) }
+        modules.setTargetColor(sel, selectedTargetKey, argb)
         dirty = true
         val (h, s, v) = MaeveColor.rgbToHsv(MaeveColor.rgbOf(argb))
         editH = h; editS = s; editV = v; editA = MaeveColor.alphaOf(argb)
@@ -309,7 +323,8 @@ class EditorState {
             id.startsWith("swatch:") -> {
                 val idx = id.removePrefix("swatch:").toIntOrNull() ?: return false
                 val rgb = MaeveColor.rgbOf(CustomizeLayout.SWATCHES.getOrNull(idx) ?: return false)
-                modules.updateStyle(sel) { it.copy(color = MaeveColor.argb(MaeveColor.alphaOf(it.color), rgb)) }
+                val cur = module.targetColor(selectedTargetKey)
+                modules.setTargetColor(sel, selectedTargetKey, MaeveColor.argb(MaeveColor.alphaOf(cur), rgb))
             }
             else -> return false
         }

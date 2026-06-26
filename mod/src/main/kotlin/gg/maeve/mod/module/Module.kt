@@ -34,10 +34,21 @@ interface HudModule : Module {
     /** The module's base/theme style — the reset target. */
     val defaultStyle: HudStyle get() = HudStyle()
 
-    /** Module-specific boolean options surfaced in the editor (beyond generic [style]). */
-    val toggles: List<ModuleToggle> get() = emptyList()
+    /** Module-specific typed options surfaced in the editor (beyond generic [style]). */
+    val options: List<ModuleOption> get() = emptyList()
+    val toggles: List<ToggleOption> get() = options.filterIsInstance<ToggleOption>()
+    val colorOptions: List<ColorOption> get() = options.filterIsInstance<ColorOption>()
     fun option(key: String): Boolean = false
     fun setOption(key: String, value: Boolean) {}
+    fun colorOption(key: String): Int = 0
+    fun setColorOption(key: String, value: Int) {}
+
+    /** Colours the editor's HSV picker can target. Default: the single [style] colour.
+     *  A module that overrides this to add targets MUST also override [targetColor]/[setTargetColor]
+     *  (the defaults only handle the "style" key and would route every other target to [style].color). */
+    fun colorTargets(): List<ColorTarget> = listOf(ColorTarget("style", "Colour"))
+    fun targetColor(key: String): Int = style.color
+    fun setTargetColor(key: String, value: Int) { style = style.copy(color = value) }
 
     /** Produce the lines to draw this frame. Empty = nothing to draw. */
     fun render(ctx: gg.maeve.mod.platform.GameContext): List<HudLine>

@@ -52,7 +52,7 @@ class GridLayoutTest {
 class CustomizeLayoutTest {
     @Test fun `hud popup contains every style control`() {
         val popup = CustomizeLayout.popupRect(800, 600, true)
-        val controls = CustomizeLayout.controls(popup)
+        val controls = CustomizeLayout.controls(popup, 0, 0)
         for (id in listOf("preview", "sv", "hue", "alpha", "hex", "visible", "scale-", "scale+", "reset")) {
             val c = controls.firstOrNull { it.id == id }
             assertNotNull(c, "control $id present")
@@ -80,15 +80,15 @@ class CustomizeLayoutTest {
     }
 
     @Test fun `popup grows to fit many option rows`() {
-        val small = CustomizeLayout.popupRect(800, 600, true, 0)
-        val big = CustomizeLayout.popupRect(800, 600, true, 4)
-        assertTrue(big.height > small.height, "popup taller with 4 options")
-        for (r in CustomizeLayout.optionRows(big, 4)) assertTrue(r.bottom <= big.bottom, "4th option row inside popup")
+        val small = CustomizeLayout.popupRect(800, 600, true, 0, 0)
+        val big = CustomizeLayout.popupRect(800, 600, true, 0, 12)
+        assertTrue(big.height > small.height, "popup grows once the right column exceeds the picker column")
+        for (r in CustomizeLayout.optionRows(big, 0, 12)) assertTrue(r.bottom <= big.bottom, "all option rows inside popup")
     }
 
     @Test fun `option rows sit inside the popup`() {
         val popup = CustomizeLayout.popupRect(800, 600, true)
-        val rows = CustomizeLayout.optionRows(popup, 2)
+        val rows = CustomizeLayout.optionRows(popup, 0, 2)
         assertEquals(2, rows.size)
         for (r in rows) {
             assertTrue(r.left >= popup.left && r.right <= popup.right, "option row within width")
@@ -98,7 +98,7 @@ class CustomizeLayoutTest {
 
     @Test fun `controls fit within the popup at a small gui size`() {
         val popup = CustomizeLayout.popupRect(360, 270, true) // gui-scale-4-ish
-        for (c in CustomizeLayout.controls(popup)) {
+        for (c in CustomizeLayout.controls(popup, 0, 0)) {
             assertTrue(c.rect.right <= popup.right && c.rect.bottom <= popup.bottom, "${c.id} overflows small popup")
         }
     }

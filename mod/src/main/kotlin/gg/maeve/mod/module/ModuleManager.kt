@@ -60,6 +60,10 @@ class ModuleManager(private val config: Config) {
         (modules[id] as? HudModule)?.setOption(key, value)
     }
 
+    fun setTargetColor(id: String, key: String, value: Int) {
+        (modules[id] as? HudModule)?.setTargetColor(key, value)
+    }
+
     fun resetStyle(id: String) {
         (modules[id] as? HudModule)?.let { it.style = it.defaultStyle }
     }

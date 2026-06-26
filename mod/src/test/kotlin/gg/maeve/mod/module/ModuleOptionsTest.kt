@@ -6,24 +6,33 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ModuleOptionsTest {
-    private val defs = listOf(ModuleToggle("a", "Alpha", true), ModuleToggle("b", "Beta", false))
+    private fun opts() = ModuleOptions(
+        listOf(
+            ToggleOption("a", "Alpha", true),
+            ToggleOption("b", "Beta", false),
+            ColorOption("c", "Colour", 0xFF112233.toInt()),
+        ),
+    )
 
-    @Test fun `returns the declared default until set`() {
-        val o = ModuleOptions(defs)
-        assertTrue(o.get("a")); assertFalse(o.get("b"))
+    @Test fun `toggles default until set`() {
+        val o = opts()
+        assertTrue(o.bool("a")); assertFalse(o.bool("b"))
+        o.setBool("a", false); assertFalse(o.bool("a"))
     }
 
-    @Test fun `set overrides the default`() {
-        val o = ModuleOptions(defs)
-        o.set("a", false); o.set("b", true)
-        assertFalse(o.get("a")); assertTrue(o.get("b"))
+    @Test fun `colour default until set`() {
+        val o = opts()
+        assertEquals(0xFF112233.toInt(), o.color("c"))
+        o.setColor("c", 0xFF445566.toInt()); assertEquals(0xFF445566.toInt(), o.color("c"))
     }
 
-    @Test fun `unknown key is false`() {
-        assertFalse(ModuleOptions(defs).get("nope"))
+    @Test fun `unknown keys are falsy`() {
+        val o = opts(); assertFalse(o.bool("nope")); assertEquals(0, o.color("nope"))
     }
 
-    @Test fun `exposes its toggle definitions`() {
-        assertEquals(defs, ModuleOptions(defs).toggles)
+    @Test fun `typed filters split toggles and colours`() {
+        val o = opts()
+        assertEquals(listOf("a", "b"), o.toggles.map { it.key })
+        assertEquals(listOf("c"), o.colorOptions.map { it.key })
     }
 }

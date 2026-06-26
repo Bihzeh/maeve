@@ -3,7 +3,7 @@
     { "type": "reference", "id": "minecraft:include/space" },
     {
       "type": "ttf",
-      "file": "maeve:geist.ttf",
+      "file": "maeve:manrope.ttf",
       "size": 10.0,
       "oversample": 2.0,
       "shift": [0.0, 0.0],

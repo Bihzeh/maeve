@@ -20,6 +20,7 @@ class KeystrokesModule : HudModule {
     override var offsetY = 40
     override val defaultStyle = HudStyle(align = TextAlign.CENTER)
     override var style = HudStyle(align = TextAlign.CENTER)
+        set(value) { field = value.copy(align = TextAlign.CENTER) } // always centre-aligned so W sits over S
 
     private val opts = ModuleOptions(listOf(ModuleToggle("space", "Spacebar", true)))
     override val toggles get() = opts.toggles
@@ -32,7 +33,7 @@ class KeystrokesModule : HudModule {
             HudLine(mark(ctx.keyForward, "W")),
             HudLine("${mark(ctx.keyLeft, "A")}${mark(ctx.keyBack, "S")}${mark(ctx.keyRight, "D")}"),
         )
-        if (opts.get("space")) lines += HudLine(if (ctx.keyJump) "[_______]" else " _______ ") // spacebar under A-D
+        if (opts.get("space")) lines += HudLine(if (ctx.keyJump) "\u2586\u2586\u2586\u2586\u2586\u2586\u2586\u2586\u2586" else "\u2582\u2582\u2582\u2582\u2582\u2582\u2582\u2582\u2582") // continuous spacebar bar under A-D (depresses on jump)
         return lines
     }
 }

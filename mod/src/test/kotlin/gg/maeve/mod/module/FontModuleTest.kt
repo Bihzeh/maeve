@@ -11,7 +11,7 @@ class FontModuleTest {
     @Test fun `defaults`() {
         val f = FontModule()
         assertEquals("font", f.id)
-        assertEquals("Custom Font (Geist)", f.displayName)
+        assertEquals("Custom Font (Manrope)", f.displayName)
         assertTrue(f.enabled)
     }
 

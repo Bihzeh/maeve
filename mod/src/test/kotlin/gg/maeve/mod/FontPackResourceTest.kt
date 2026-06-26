@@ -22,17 +22,17 @@ class FontPackResourceTest {
         assertEquals(listOf(88, 99), pack["max_format"]!!.jsonArray.map { it.jsonPrimitive.int })
     }
 
-    @Test fun `default font puts the geist ttf ahead of the vanilla references`() {
+    @Test fun `default font puts the manrope ttf ahead of the vanilla references`() {
         val txt = assertNotNull(text("resourcepacks/font/assets/minecraft/font/default.json"))
         val providers = Json.parseToJsonElement(txt).jsonObject["providers"]!!.jsonArray
         assertEquals("reference", providers[0].jsonObject["type"]!!.jsonPrimitive.content) // space first
         assertEquals("ttf", providers[1].jsonObject["type"]!!.jsonPrimitive.content)       // then our ttf (first-wins)
-        assertEquals("maeve:geist.ttf", providers[1].jsonObject["file"]!!.jsonPrimitive.content)
+        assertEquals("maeve:manrope.ttf", providers[1].jsonObject["file"]!!.jsonPrimitive.content)
     }
 
-    @Test fun `geist ttf is bundled and non-empty`() {
-        val bytes = javaClass.classLoader.getResourceAsStream("resourcepacks/font/assets/maeve/font/geist.ttf")?.readBytes()
+    @Test fun `manrope ttf is bundled and non-empty`() {
+        val bytes = javaClass.classLoader.getResourceAsStream("resourcepacks/font/assets/maeve/font/manrope.ttf")?.readBytes()
         assertNotNull(bytes)
-        assertTrue(bytes.size > 1000, "geist.ttf should be a real font")
+        assertTrue(bytes.size > 1000, "manrope.ttf should be a real font")
     }
 }

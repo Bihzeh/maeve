@@ -37,11 +37,11 @@ object HudFormat {
      * +/-[halfSpan] degrees. Returns two equal-width lines: the tape and a centred caret marking
      * the current heading.
      */
-    fun compass(yaw: Float, width: Int = 31, halfSpan: Float = 90f): List<String> {
+    fun compass(yaw: Float, width: Int = 41, halfSpan: Float = 100f): List<String> {
         val bearing = ((yaw + 180f) % 360f + 360f) % 360f
         val center = width / 2
-        val row = CharArray(width) { '\u00B7' } // middot filler
-        val points = listOf(0 to "N", 45 to "NE", 90 to "E", 135 to "SE", 180 to "S", 225 to "SW", 270 to "W", 315 to "NW")
+        val row = CharArray(width) { '\u2500' } // continuous box-draw line (full-width -> low jitter)
+        val points = listOf(0 to "N", 45 to "ne", 90 to "E", 135 to "se", 180 to "S", 225 to "sw", 270 to "W", 315 to "nw") // cardinals upper, inter lower (smaller)
         for ((deg, label) in points) {
             val delta = angleDiff(deg.toFloat(), bearing)
             if (kotlin.math.abs(delta) > halfSpan) continue

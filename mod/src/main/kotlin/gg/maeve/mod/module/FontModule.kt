@@ -7,6 +7,6 @@ package gg.maeve.mod.module
  */
 class FontModule : Module {
     override val id = "font"
-    override val displayName = "Custom Font (Geist)"
+    override val displayName = "Custom Font (Manrope)"
     override var enabled = true // brand font on by default
 }

@@ -18,6 +18,7 @@ class CompassModule : HudModule {
     override var offsetY = 4
     override val defaultStyle = HudStyle(align = TextAlign.CENTER)
     override var style = HudStyle(align = TextAlign.CENTER)
+        set(value) { field = value.copy(align = TextAlign.CENTER) }
 
     override fun render(ctx: GameContext): List<HudLine> =
         if (!ctx.inWorld) emptyList() else HudFormat.compass(ctx.yaw).map { HudLine(it) }

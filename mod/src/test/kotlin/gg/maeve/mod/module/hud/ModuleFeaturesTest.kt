@@ -14,7 +14,7 @@ class ModuleFeaturesTest {
         m.setOption("space", true)
         val lines = m.render(ctx(jump = true))
         assertEquals(3, lines.size, "W / ASD / space")
-        assertTrue(lines[2].text.contains("[") , "pressed spacebar is bracketed: ${lines[2].text}")
+        assertTrue(lines[2].text.contains("\u2586"), "pressed spacebar is a filled bar: ${lines[2].text}")
     }
 
     @Test fun `spacebar row matches the ASD row width`() {

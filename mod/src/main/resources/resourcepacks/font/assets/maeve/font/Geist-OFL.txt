@@ -1,3 +1,0 @@
-Geist is licensed under the SIL Open Font License 1.1.
-Source: https://github.com/google/fonts/tree/main/ofl/geist
-Bundled with Maeve under OFL-1.1 (redistribution permitted). See LICENSES/README.md.

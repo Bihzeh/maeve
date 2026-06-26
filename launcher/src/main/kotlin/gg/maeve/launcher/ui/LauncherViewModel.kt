@@ -19,6 +19,7 @@ import gg.maeve.launcher.update.UpdateService
 import gg.maeve.launcher.update.UpdateState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.awt.Desktop
 import java.net.URI
@@ -91,7 +92,7 @@ class LauncherViewModel(private val scope: CoroutineScope) {
         val clientId = AuthConfig.clientId()
         if (clientId == null) { signInError = "No Azure client ID configured."; return } // unreachable: AuthConfig has a baked-in default
         signInBusy = true; signInError = null
-        scope.launch(Dispatchers.IO) {
+        signInJob = scope.launch(Dispatchers.IO) {
             runCatching {
                 KtorMsaTransport().use { transport ->
                     val auth = MsaDeviceCodeAuth(clientId, transport)
@@ -105,9 +106,20 @@ class LauncherViewModel(private val scope: CoroutineScope) {
                     result.refreshToken?.let { tokenStore.saveRefreshToken(account, it) }
                     ui { session = result.session; prompt = null; screen = Screen.HOME }
                 }
-            }.onFailure { e -> ui { signInError = e.message; prompt = null } }
+            }.onFailure { e ->
+                if (e is kotlinx.coroutines.CancellationException) throw e // user cancelled; UI already reset
+                ui { signInError = e.message; prompt = null }
+            }
             ui { signInBusy = false }
         }
+    }
+
+    private var signInJob: Job? = null
+
+    /** Cancel a pending device-code sign-in and return to the idle sign-in state. */
+    fun cancelSignIn() {
+        signInJob?.cancel(); signInJob = null
+        prompt = null; signInBusy = false; signInError = null
     }
 
     fun play() {

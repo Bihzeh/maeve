@@ -65,24 +65,23 @@ object MaeveMotion {
 }
 
 private val MaeveTypography = Typography().run {
-    val d = MaeveFonts.Display // Space Grotesk — display, wordmark, headings
-    val s = MaeveFonts.Sans    // Manrope — titles (Bold) + body/UI (Medium)
+    val p = MaeveFonts.Poppins // unified family — hierarchy via weight + size
     copy(
-        displayLarge = displayLarge.copy(fontFamily = d, fontWeight = FontWeight.SemiBold, fontSize = 40.sp, lineHeight = 46.sp),
-        displayMedium = displayMedium.copy(fontFamily = d, fontWeight = FontWeight.SemiBold),
-        displaySmall = displaySmall.copy(fontFamily = d, fontWeight = FontWeight.Medium),
-        headlineLarge = headlineLarge.copy(fontFamily = d, fontWeight = FontWeight.SemiBold),
-        headlineMedium = headlineMedium.copy(fontFamily = d, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 34.sp),
-        headlineSmall = headlineSmall.copy(fontFamily = d, fontWeight = FontWeight.SemiBold),
-        titleLarge = titleLarge.copy(fontFamily = s, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
-        titleMedium = titleMedium.copy(fontFamily = s, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 22.sp),
-        titleSmall = titleSmall.copy(fontFamily = s, fontWeight = FontWeight.Bold),
-        bodyLarge = bodyLarge.copy(fontFamily = s, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp),
-        bodyMedium = bodyMedium.copy(fontFamily = s, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
-        bodySmall = bodySmall.copy(fontFamily = s, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 18.sp),
-        labelLarge = labelLarge.copy(fontFamily = s, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp),
-        labelMedium = labelMedium.copy(fontFamily = s, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
-        labelSmall = labelSmall.copy(fontFamily = s, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 14.sp),
+        displayLarge = displayLarge.copy(fontFamily = p, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 46.sp),
+        displayMedium = displayMedium.copy(fontFamily = p, fontWeight = FontWeight.SemiBold),
+        displaySmall = displaySmall.copy(fontFamily = p, fontWeight = FontWeight.SemiBold),
+        headlineLarge = headlineLarge.copy(fontFamily = p, fontWeight = FontWeight.SemiBold),
+        headlineMedium = headlineMedium.copy(fontFamily = p, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 34.sp),
+        headlineSmall = headlineSmall.copy(fontFamily = p, fontWeight = FontWeight.SemiBold),
+        titleLarge = titleLarge.copy(fontFamily = p, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
+        titleMedium = titleMedium.copy(fontFamily = p, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
+        titleSmall = titleSmall.copy(fontFamily = p, fontWeight = FontWeight.Medium),
+        bodyLarge = bodyLarge.copy(fontFamily = p, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
+        bodyMedium = bodyMedium.copy(fontFamily = p, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
+        bodySmall = bodySmall.copy(fontFamily = p, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 18.sp),
+        labelLarge = labelLarge.copy(fontFamily = p, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp),
+        labelMedium = labelMedium.copy(fontFamily = p, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+        labelSmall = labelSmall.copy(fontFamily = p, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 14.sp),
     )
 }
 

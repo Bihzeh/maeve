@@ -45,7 +45,7 @@ fun SignInScreen(vm: LauncherViewModel) {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.width(380.dp).padding(24.dp)) {
             MaeveMark(size = 56.dp)
-            Text("MAEVE", fontFamily = MaeveFonts.Display, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 28.sp, letterSpacing = 4.sp, color = MaterialTheme.colorScheme.onBackground)
+            Text("MAEVE", fontFamily = MaeveFonts.Poppins, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 28.sp, letterSpacing = 4.sp, color = MaterialTheme.colorScheme.onBackground)
 
             val prompt = vm.prompt
             when {

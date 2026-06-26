@@ -48,8 +48,7 @@ freely bundleable and redistributable.
 
 | Font | Role | License | Source |
 |---|---|---|---|
-| Space Grotesk | Display / headings / wordmark | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/spacegrotesk |
-| Manrope | Titles (Bold) + body/UI (Medium) | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/manrope |
+| Poppins | All UI + in-game HUD (weighted: Regular/Medium/SemiBold/Bold) | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/poppins |
 | Geist Mono | Codes / numerics | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/geistmono |
 
 Full OFL-1.1 texts are vendored alongside the fonts (`*-OFL.txt`).

@@ -37,6 +37,7 @@ import gg.maeve.launcher.ui.components.MaeveButton
 import gg.maeve.launcher.ui.components.MaeveCard
 import gg.maeve.launcher.ui.components.MaeveProgress
 import gg.maeve.launcher.ui.components.PillKind
+import gg.maeve.launcher.ui.components.RotatableSkin
 import gg.maeve.launcher.ui.components.SectionLabel
 import gg.maeve.launcher.ui.components.Spinner
 import gg.maeve.launcher.ui.components.StatusPill
@@ -68,12 +69,10 @@ private fun Hero(vm: LauncherViewModel, modifier: Modifier) {
         // Top vignette (for the username) + bottom scrim (for the launch bar).
         Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(120.dp)
             .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent))))
-        // Player skin — large, centered, legs running behind the launch bar.
-        Image(
-            painterResource("skin/player.png"),
-            contentDescription = "Player skin",
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxHeight(0.86f),
-            contentScale = ContentScale.Fit,
+        // Player skin — drag to spin (LabyMod-style), big and cropped at the knees.
+        RotatableSkin(
+            frameCount = 24,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxHeight(0.96f),
         )
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(220.dp)
             .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f)))))

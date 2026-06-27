@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import gg.maeve.launcher.ui.LauncherViewModel
@@ -64,29 +66,26 @@ fun HomeScreen(vm: LauncherViewModel) {
 @Composable
 private fun Hero(vm: LauncherViewModel, modifier: Modifier) {
     Box(modifier.clip(RoundedCornerShape(14.dp)).border(1.dp, Maeve.border, RoundedCornerShape(14.dp))) {
-        // Minecraft screenshot backdrop.
+        // Backdrop fills the whole card, cropped as needed.
         Image(painterResource("hero/mc-bg.png"), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        // Top vignette (for the username) + bottom scrim (for the launch bar).
-        Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(120.dp)
-            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent))))
-        // Player skin — drag to spin (LabyMod-style), big and cropped at the knees.
-        RotatableSkin(
-            frameCount = 24,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxHeight(0.96f),
-        )
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(220.dp)
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f)))))
-        // Username, uppercase, top-centered.
-        Text(
-            (vm.session?.username ?: "Player").uppercase(),
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 26.dp),
-            fontFamily = MaeveFonts.Display, fontWeight = FontWeight.Bold, fontSize = 22.sp,
-            letterSpacing = 3.sp, color = Color.White,
-        )
-        // Status (top-left) + transient exit/error just above the bar.
-        Row(Modifier.align(Alignment.TopStart).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SymIcon("verified", 16.dp, Maeve.accentHi)
-            Text("Up to date · Fabric", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelMedium)
+        // 50% black overlay to darken the background.
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)))
+        // Player skin (drag to spin), big and knee-cropped, behind the launch bar.
+        RotatableSkin(frameCount = 24, modifier = Modifier.align(Alignment.BottomCenter).fillMaxHeight(0.74f))
+        // Extra bottom gradient so the launch bar stays legible.
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(180.dp)
+            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))))
+        // Top: two promoted-server ad cards + the username.
+        Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                AdCard("Hypixel Network", "mc.hypixel.net", "42,318 online", Modifier.weight(1f))
+                AdCard("CubeCraft Games", "play.cubecraft.net", "11,904 online", Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text((vm.session?.username ?: "Player").uppercase(), fontFamily = MaeveFonts.Display, fontWeight = FontWeight.Bold, fontSize = 22.sp, letterSpacing = 3.sp, color = Color.White)
+                Spacer(Modifier.width(8.dp))
+                SymIcon("edit", 16.dp, Color.White.copy(alpha = 0.7f))
+            }
         }
         // Bottom: split launch button (or download progress while playing).
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp)) {
@@ -109,6 +108,37 @@ private fun Hero(vm: LauncherViewModel, modifier: Modifier) {
                     LaunchBar(vm)
                 }
             }
+        }
+    }
+}
+
+/** Promoted-server "ad" card (frame 03). Placeholder content; Join is a follow-up. */
+@Composable
+private fun AdCard(name: String, address: String, online: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier.clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = 0.42f))
+            .border(1.dp, Color.White.copy(alpha = 0.10f), RoundedCornerShape(12.dp)).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(Maeve.accentSubtle), contentAlignment = Alignment.Center) {
+            Text(name.take(1), fontFamily = MaeveFonts.Display, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Maeve.accentHi)
+        }
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                SymIcon("verified", 12.dp, Maeve.ember)
+                Text("PROMOTED SERVER", color = Maeve.ember, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.sp)
+            }
+            Text(name, color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(online, color = Color.White.copy(alpha = 0.65f), style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Row(
+            Modifier.clip(RoundedCornerShape(8.dp)).background(Maeve.accent.copy(alpha = 0.18f))
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { /* join — follow-up */ }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            SymIcon("bolt", 15.dp, Maeve.accentHi)
+            Text("Join", color = Maeve.accentHi, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
         }
     }
 }

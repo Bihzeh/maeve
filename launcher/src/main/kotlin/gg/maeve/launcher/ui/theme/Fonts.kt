@@ -5,19 +5,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 
 /**
- * Maeve's unified type family: **Poppins** (OFL) across the whole launcher and the in-game HUD,
- * with hierarchy expressed via weight + size (see the Material3 Typography in MaeveTheme).
- * Geist Mono is kept for codes / numerics.
+ * Maeve launcher type families ("Obsidian" design system):
+ *  - [Display] = **Outfit** (geometric) — wordmark, headings, section labels, numerics.
+ *  - [Body]    = **Hanken Grotesk** — body copy and buttons.
+ *  - [Mono]    = **Geist Mono** — device codes / numeric readouts.
+ *
+ * All three are bundled as pre-instanced static weights under `resources/fonts/` (variable
+ * sources are instanced at build-prep time; we do NOT rely on runtime `FontVariation`, which is
+ * unreliable on Skiko desktop). Outfit/Hanken are OFL. The in-game HUD font (Poppins) lives in
+ * the `:mod` module and is unaffected by this launcher retheme.
  */
 object MaeveFonts {
-    val Poppins: FontFamily = FontFamily(
-        Font("fonts/Poppins-Regular.ttf", FontWeight.Normal),
-        Font("fonts/Poppins-Medium.ttf", FontWeight.Medium),
-        Font("fonts/Poppins-SemiBold.ttf", FontWeight.SemiBold),
-        Font("fonts/Poppins-Bold.ttf", FontWeight.Bold),
+    val Display: FontFamily = FontFamily(
+        Font("fonts/Outfit-Regular.ttf", FontWeight.Normal),
+        Font("fonts/Outfit-Medium.ttf", FontWeight.Medium),
+        Font("fonts/Outfit-SemiBold.ttf", FontWeight.SemiBold),
+        Font("fonts/Outfit-Bold.ttf", FontWeight.Bold),
+    )
+    val Body: FontFamily = FontFamily(
+        Font("fonts/HankenGrotesk-Regular.ttf", FontWeight.Normal),
+        Font("fonts/HankenGrotesk-Medium.ttf", FontWeight.Medium),
+        Font("fonts/HankenGrotesk-SemiBold.ttf", FontWeight.SemiBold),
+        Font("fonts/HankenGrotesk-Bold.ttf", FontWeight.Bold),
+        Font("fonts/HankenGrotesk-ExtraBold.ttf", FontWeight.ExtraBold),
     )
     val Mono: FontFamily = FontFamily(
         Font("fonts/GeistMono.ttf", FontWeight.Normal),
-        Font("fonts/GeistMono.ttf", FontWeight.Medium),
     )
 }

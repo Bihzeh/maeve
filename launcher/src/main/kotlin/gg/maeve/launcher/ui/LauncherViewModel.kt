@@ -26,7 +26,7 @@ import java.net.URI
 import java.nio.file.Path
 import javax.swing.SwingUtilities
 
-enum class Screen { SIGN_IN, HOME, SETTINGS, MODS }
+enum class Screen { SIGN_IN, HOME, MODS, COSMETICS, FRIENDS, SETTINGS }
 
 /** UI state holder wrapping the existing auth + launch logic. All Compose-state writes
  *  are marshaled to the UI (EDT) thread. No provisioning/auth behavior changes here. */
@@ -52,6 +52,14 @@ class LauncherViewModel(private val scope: CoroutineScope) {
     // settings + mods
     var maxMemoryMb by mutableStateOf(2048)
     val mods = mutableStateMapOf("sodium" to true, "lithium" to true)
+    // Maeve HUD is the bundled mod (always installed); this toggle is UI state only —
+    // it is NOT fed to enabledMods (which feeds the provisioner). HUD is configured in-game.
+    var maeveHudEnabled by mutableStateOf(true)
+
+    // launcher behavior (UI state; disk persistence is a tracked follow-up)
+    var closeOnLaunch by mutableStateOf(true)
+    var autoUpdate by mutableStateOf(true)
+    var minimizeToTray by mutableStateOf(false)
     val dataDir: Path get() = MaevePaths.default().root
 
     private fun ui(block: () -> Unit) = SwingUtilities.invokeLater(block)

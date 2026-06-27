@@ -43,12 +43,18 @@ Proprietary — see top-level `LICENSE` (decision: ADR-0009).
 
 ## Bundled fonts (launcher UI)
 
-Shipped in `launcher/src/main/resources/fonts/`. All SIL Open Font License 1.1 —
-freely bundleable and redistributable.
+Shipped in `launcher/src/main/resources/fonts/`. The "Obsidian" redesign (Jun 2026) moved the
+launcher off Poppins onto Outfit + Hanken Grotesk; Poppins now ships only with the in-game HUD
+(the `:mod` resource pack). Fonts are pre-instanced static weights; the Material Symbols icon
+font is subset to the ~60 glyphs the UI uses.
 
 | Font | Role | License | Source |
 |---|---|---|---|
-| Poppins | All UI + in-game HUD (weighted: Regular/Medium/SemiBold/Bold) | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/poppins |
-| Geist Mono | Codes / numerics | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/geistmono |
+| Outfit | Launcher display / headings / wordmark / numerics (Regular/Medium/SemiBold/Bold) | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/outfit |
+| Hanken Grotesk | Launcher body / buttons (Regular/Medium/SemiBold/Bold/ExtraBold) | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/hankengrotesk |
+| Geist Mono | Device codes / numerics | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/geistmono |
+| Material Symbols Outlined (subset) | Launcher icons (wght 400 / opsz 24 / FILL 0) | Apache-2.0 | https://github.com/google/material-design-icons |
+| Poppins | In-game HUD font pack only (`:mod`, weighted) | OFL-1.1 | https://github.com/google/fonts/tree/main/ofl/poppins |
 
-Full OFL-1.1 texts are vendored alongside the fonts (`*-OFL.txt`).
+OFL-1.1 texts are vendored alongside the fonts (`*-OFL.txt`); the Material Symbols Apache-2.0
+text is vendored as `MaterialSymbols-Apache2.0.txt`.

@@ -113,6 +113,8 @@ tasks.register<JavaExec>("uiPreview") {
     description = "Render launcher screens to build/ui-preview/*.png"
     mainClass.set("gg.maeve.launcher.ui.UiPreviewMainKt")
     classpath = sourceSets["main"].runtimeClasspath
+    // CPU Skia on headless/GPU-less CI runners.
+    systemProperty("skiko.renderApi", "SOFTWARE")
 }
 
 // Rasterize brand SVGs (logo/icon) to PNG via Skia's CPU surface.

@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,11 @@ import gg.maeve.launcher.ui.theme.Maeve
 import gg.maeve.launcher.ui.theme.MaeveFonts
 import gg.maeve.launcher.update.UpdateState
 import gg.maeve.shared.Versions
+import kotlin.math.roundToInt
+
+private val LaunchAllShape = RoundedCornerShape(14.dp)
+private val LaunchTopShape = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+private val LaunchBotShape = RoundedCornerShape(bottomStart = 14.dp, bottomEnd = 14.dp, topStart = 0.dp, topEnd = 0.dp)
 
 @Composable
 fun HomeScreen(vm: LauncherViewModel) {
@@ -90,26 +96,17 @@ private fun LaunchCard(vm: LauncherViewModel, modifier: Modifier) {
                 RotatableSkin(frameCount = 24, modifier = Modifier.height(skinH).aspectRatio(360f / 464f))
             }
         }
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp)) {
-            if (vm.playing) {
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Maeve.s1.copy(alpha = 0.92f)).border(1.dp, Maeve.border, RoundedCornerShape(14.dp)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Spinner(16)
-                        Text(vm.playStatus.ifEmpty { "Preparing…" }, color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.bodyMedium)
-                    }
-                    MaeveProgress(vm.playFraction)
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val err = vm.playError; val exit = vm.playExit
-                    when {
-                        err != null -> StatusPill(err.take(48), PillKind.Failed)
-                        exit != null -> StatusPill(exit, PillKind.Neutral)
-                        else -> {}
-                    }
-                    LaunchBar(vm)
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp)) {
+            if (!vm.playing) {
+                val err = vm.playError; val exit = vm.playExit
+                when {
+                    err != null -> { StatusPill(err.take(48), PillKind.Failed); Spacer(Modifier.height(8.dp)) }
+                    exit != null -> { StatusPill(exit, PillKind.Neutral); Spacer(Modifier.height(8.dp)) }
+                    else -> {}
                 }
             }
+            LaunchBar(vm, shape = if (vm.playing) LaunchTopShape else LaunchAllShape)
+            if (vm.playing) ProgressStrip(vm)
         }
     }
 }
@@ -151,9 +148,8 @@ private fun JoinButton() {
 
 /** The split launch button: LAUNCH action + a version/profile dropdown affordance. */
 @Composable
-private fun LaunchBar(vm: LauncherViewModel) {
+private fun LaunchBar(vm: LauncherViewModel, shape: Shape = LaunchAllShape) {
     val enabled = vm.session != null && !vm.playing
-    val shape = RoundedCornerShape(14.dp)
     Row(
         Modifier.fillMaxWidth().height(72.dp)
             .then(if (enabled) Modifier.shadow(16.dp, shape, ambientColor = Maeve.accent, spotColor = Maeve.accent) else Modifier)
@@ -179,6 +175,21 @@ private fun LaunchBar(vm: LauncherViewModel) {
                 .padding(horizontal = 22.dp),
             contentAlignment = Alignment.Center,
         ) { SymIcon("expand_more", 26.dp, Color.White) }
+    }
+}
+
+/** Loading-status drawer attached under the launch button while launching (darker shade). */
+@Composable
+private fun ProgressStrip(vm: LauncherViewModel) {
+    Column(
+        Modifier.fillMaxWidth().clip(LaunchBotShape).background(Color(0xFF0C3A25)).padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(vm.playStatus.ifEmpty { "Preparing\u2026" }, color = Color.White, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            vm.playFraction?.let { Text("${(it.coerceIn(0f, 1f) * 100).roundToInt()}%", color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelSmall) }
+        }
+        MaeveProgress(vm.playFraction)
     }
 }
 

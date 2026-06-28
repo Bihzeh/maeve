@@ -28,6 +28,7 @@ class SnellMod : ClientModInitializer {
         bridge.registerFontPack() // register the pack source only (no reload during init)
 
         val config = Config(bridge.configDir()).apply { load() }
+        gg.snell.mod.platform.SnellMenus.enabled = config.isMenusEnabled() // bespoke in-game menus (mixin reads this)
         val modules = ModuleManager(config)
 
         modules.register(FontModule())

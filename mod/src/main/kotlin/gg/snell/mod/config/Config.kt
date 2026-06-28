@@ -50,6 +50,7 @@ private data class ConfigData(
     val schema: Int = 2,
     val modules: MutableMap<String, ModuleState> = mutableMapOf(),
     var editor: EditorSettings? = null, // editor-global prefs, orthogonal to per-module state
+    var menus: Boolean = true,          // bespoke Snell in-game menus (the launcher-matched overhaul)
 )
 
 /**
@@ -78,6 +79,11 @@ class Config(private val dir: Path) {
     fun setSnapEnabled(value: Boolean) {
         data.editor = (data.editor ?: EditorSettings()).copy(snapEnabled = value)
     }
+
+    /** Whether the bespoke Snell in-game menus replace the vanilla ones (default on). */
+    fun isMenusEnabled(): Boolean = data.menus
+
+    fun setMenusEnabled(value: Boolean) { data.menus = value }
 
     /** Restore persisted state onto a freshly registered module. */
     fun applyTo(module: Module) {

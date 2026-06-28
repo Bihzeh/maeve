@@ -5,34 +5,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 
 /**
- * Maeve launcher type families ("Obsidian" design system):
- *  - [Display] = **Outfit** (geometric) — wordmark, headings, section labels, numerics.
- *  - [Body]    = **Hanken Grotesk** — body copy and buttons.
- *  - [Mono]    = **Geist Mono** — device codes / numeric readouts.
+ * Maeve launcher type families ("Snell" design system):
+ *  - [Display] = [Body] = **Geist** — one geometric sans for all UI (weight-differentiated).
+ *  - [Mono]    = **Geist Mono** — codes / numeric readouts.
+ *  - [Pixel]   = **Monocraft** — the in-game-style nametag.
  *
- * All three are bundled as pre-instanced static weights under `resources/fonts/` (variable
- * sources are instanced at build-prep time; we do NOT rely on runtime `FontVariation`, which is
- * unreliable on Skiko desktop). Outfit/Hanken are OFL. The in-game HUD font (Poppins) lives in
- * the `:mod` module and is unaffected by this launcher retheme.
+ * All bundled as pre-instanced static weights under `resources/fonts/` (Geist OFL). The in-game
+ * HUD font (Poppins) lives in the `:mod` module and is unaffected by this launcher theme.
  */
+private val Geist = FontFamily(
+    Font("fonts/Geist-Regular.ttf", FontWeight.Normal),
+    Font("fonts/Geist-Medium.ttf", FontWeight.Medium),
+    Font("fonts/Geist-SemiBold.ttf", FontWeight.SemiBold),
+    Font("fonts/Geist-Bold.ttf", FontWeight.Bold),
+)
+
 object MaeveFonts {
-    val Display: FontFamily = FontFamily(
-        Font("fonts/Outfit-Regular.ttf", FontWeight.Normal),
-        Font("fonts/Outfit-Medium.ttf", FontWeight.Medium),
-        Font("fonts/Outfit-SemiBold.ttf", FontWeight.SemiBold),
-        Font("fonts/Outfit-Bold.ttf", FontWeight.Bold),
-    )
-    val Body: FontFamily = FontFamily(
-        Font("fonts/HankenGrotesk-Regular.ttf", FontWeight.Normal),
-        Font("fonts/HankenGrotesk-Medium.ttf", FontWeight.Medium),
-        Font("fonts/HankenGrotesk-SemiBold.ttf", FontWeight.SemiBold),
-        Font("fonts/HankenGrotesk-Bold.ttf", FontWeight.Bold),
-        Font("fonts/HankenGrotesk-ExtraBold.ttf", FontWeight.ExtraBold),
-    )
+    val Display: FontFamily = Geist
+    val Body: FontFamily = Geist
     val Mono: FontFamily = FontFamily(
         Font("fonts/GeistMono.ttf", FontWeight.Normal),
+        Font("fonts/GeistMono.ttf", FontWeight.Medium),
     )
-
-    /** Monocraft (OFL) - Minecraft-style pixel font, used for the in-launcher nametag. */
     val Pixel: FontFamily = FontFamily(Font("fonts/Monocraft.ttf"))
 }

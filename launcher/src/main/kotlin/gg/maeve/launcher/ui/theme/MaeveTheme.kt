@@ -21,12 +21,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * "Obsidian" palette (Claude Design import, Emerald default). Near-black surfaces, emerald
- * accent, ember warm highlight. Maps the design's CSS `:root` tokens onto Material 3.
+ * "Snell" palette (Claude Design import). Near-black surfaces, cyan accent, pink warm highlight. Maps the design's CSS `:root` tokens onto Material 3.
  */
 private val MaeveColorScheme = darkColorScheme(
-    primary = Color(0xFF169B62),        // --ac
-    onPrimary = Color(0xFFFFFFFF),
+    primary = Color(0xFF00D9FF),        // --ac
+    onPrimary = Color(0xFF04222B),      // dark teal text on the bright cyan accent
     background = Color(0xFF0A0A0A),      // --bg
     onBackground = Color(0xFFECECEC),
     surface = Color(0xFF141414),        // --s1
@@ -41,10 +40,11 @@ private val MaeveColorScheme = darkColorScheme(
 /** Tokens Material 3's ColorScheme does not model (the design's extended ramp). */
 @Immutable
 data class MaeveColors(
-    val accent: Color = Color(0xFF169B62),      // --ac
-    val accentHi: Color = Color(0xFF1FB873),    // --ac-hi
-    val accentLo: Color = Color(0xFF11814F),    // --ac-lo
-    val accentSubtle: Color = Color(0x29169B62),// ~16% accent fill (chips, active nav)
+    val accent: Color = Color(0xFF00D9FF),      // --ac
+    val accentHi: Color = Color(0xFF5CE6FF),    // --ac-hi
+    val accentLo: Color = Color(0xFF00A6C2),    // --ac-lo
+    val accentSubtle: Color = Color(0x2900D9FF),// ~16% accent fill (chips, active nav)
+    val onAccent: Color = Color(0xFF04222B),    // text/icons on the accent (dark teal)
     val bg2: Color = Color(0xFF0E0E0E),         // --bg2 (title bar, rail)
     val s1: Color = Color(0xFF141414),          // --s1 (cards)
     val s2: Color = Color(0xFF1E1E1E),          // --s2 (inset controls)
@@ -54,11 +54,11 @@ data class MaeveColors(
     val text2: Color = Color(0xFF9C9C9C),       // secondary
     val text3: Color = Color(0xFF6E6E6E),       // muted
     val textDisabled: Color = Color(0xFF4A4A4A),
-    val ember: Color = Color(0xFFFF883E),       // warning / promoted / founder
-    val warning: Color = Color(0xFFFF883E),
+    val ember: Color = Color(0xFFFF4D9D),       // warning / promoted / founder (pink)
+    val warning: Color = Color(0xFFFF4D9D),
     val danger: Color = Color(0xFFF06B6B),      // error / offline
     val info: Color = Color(0xFF6FA8FF),        // downloading
-    val success: Color = Color(0xFF169B62),     // == accent
+    val success: Color = Color(0xFF00D9FF),     // == accent
 )
 
 val LocalMaeveColors = staticCompositionLocalOf { MaeveColors() }

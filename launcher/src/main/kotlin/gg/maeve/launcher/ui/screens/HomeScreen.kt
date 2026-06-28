@@ -162,19 +162,19 @@ private fun LaunchBar(vm: LauncherViewModel, shape: Shape = LaunchAllShape) {
                 .padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            SymIcon("play_arrow", 30.dp, Color.White)
+            SymIcon("play_arrow", 30.dp, Maeve.onAccent)
             Column {
-                Text("LAUNCH", fontFamily = MaeveFonts.Display, fontWeight = FontWeight.Bold, fontSize = 22.sp, letterSpacing = 1.sp, color = Color.White)
-                Text("Maeve Client ${Versions.MINECRAFT}", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
+                Text("LAUNCH", fontFamily = MaeveFonts.Display, fontWeight = FontWeight.Bold, fontSize = 22.sp, letterSpacing = 1.sp, color = Maeve.onAccent)
+                Text("Maeve Client ${Versions.MINECRAFT}", color = Maeve.onAccent.copy(alpha = 0.72f), style = MaterialTheme.typography.labelMedium)
             }
         }
-        Box(Modifier.width(1.dp).height(40.dp).background(Color.White.copy(alpha = 0.28f)))
+        Box(Modifier.width(1.dp).height(40.dp).background(Maeve.onAccent.copy(alpha = 0.25f)))
         Box(
             Modifier.fillMaxHeight()
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { /* profile/version dropdown — follow-up */ }
                 .padding(horizontal = 22.dp),
             contentAlignment = Alignment.Center,
-        ) { SymIcon("expand_more", 26.dp, Color.White) }
+        ) { SymIcon("expand_more", 26.dp, Maeve.onAccent) }
     }
 }
 
@@ -182,7 +182,7 @@ private fun LaunchBar(vm: LauncherViewModel, shape: Shape = LaunchAllShape) {
 @Composable
 private fun ProgressStrip(vm: LauncherViewModel) {
     Column(
-        Modifier.fillMaxWidth().clip(LaunchBotShape).background(Color(0xFF0C3A25)).padding(horizontal = 20.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(LaunchBotShape).background(Color(0xFF06303A)).padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

@@ -80,7 +80,7 @@ fun MaeveButton(
     }
     val fg = when {
         !enabled -> Maeve.textDisabled
-        variant == ButtonVariant.Primary -> Color.White
+        variant == ButtonVariant.Primary -> Maeve.onAccent
         variant == ButtonVariant.Tertiary -> Maeve.accentHi
         else -> Color(0xFFECECEC)
     }
@@ -140,8 +140,8 @@ fun PlayButton(enabled: Boolean, label: String = "Launch", onClick: () -> Unit, 
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SymIcon("play_arrow", 26.dp, Color.White)
-        Text(label, color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        SymIcon("play_arrow", 26.dp, Maeve.onAccent)
+        Text(label, color = Maeve.onAccent, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     }
 }
 

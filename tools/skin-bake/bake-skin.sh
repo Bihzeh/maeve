@@ -33,4 +33,12 @@ echo "Cropping + scaling -> ${OUT_W}x${OUT_H} (knee=$KNEE)..."
 javac -d "$TMP" "$(dirname "$0")/Bake.java"
 java -Djava.awt.headless=true -cp "$TMP" Bake "$TMP/raw" "$DEST" "$OUT_W" "$OUT_H" "$KNEE"
 
+# 256-colour palette: ~75% smaller with no visible loss on this flat/AA content.
+if command -v pngquant >/dev/null 2>&1; then
+  echo "Compressing with pngquant..."
+  pngquant --quality=70-95 --strip --force --ext .png "$DEST"/*.png
+else
+  echo "pngquant not found — frames left uncompressed (install pngquant to shrink ~75%)."
+fi
+
 echo "Done -> $DEST"

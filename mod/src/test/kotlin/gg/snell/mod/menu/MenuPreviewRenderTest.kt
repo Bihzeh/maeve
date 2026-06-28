@@ -79,4 +79,56 @@ class MenuPreviewRenderTest {
         PauseRenderer.render(canvas, w, h, opt.left + opt.width / 2, opt.top + opt.height / 2)
         assertTrue(write(img, "02-pause.png").length() > 0)
     }
+
+    /** A frame with a faux green/brown world behind it, so scrim + panel contrast read in-game. */
+    private fun worldFrame(w: Int, h: Int): Pair<BufferedImage, AwtCanvas> {
+        val (img, canvas) = frame(w, h)
+        canvas.gradientV(0, 0, w, h, 0xFF3A4A2A.toInt(), 0xFF12180C.toInt())
+        return img to canvas
+    }
+
+    @Test fun `render world picker`() {
+        val w = 520; val h = 360
+        val (img, canvas) = worldFrame(w, h)
+        val rows = listOf(
+            WorldRow("New World", "New World", "Survival · 1.21 · 2 minutes ago"),
+            WorldRow("Hardcore Attempt 4", "Hardcore", "Hardcore · 1.21 · yesterday"),
+            WorldRow("Creative Flat", "flat-1", "Creative · 1.21 · 3 days ago"),
+            WorldRow("SkyBlock", "sb", "Survival · 1.20.4 · last week"),
+            WorldRow("Old Base", "old", "Survival · 1.19 · 2 months ago"),
+        )
+        WorldSelectRenderer.render(canvas, w, h, -1, -1, rows, selected = 0, scrollY = 0, search = "", searchFocused = false)
+        assertTrue(write(img, "03-world.png").length() > 0)
+    }
+
+    @Test fun `render server picker`() {
+        val w = 520; val h = 360
+        val (img, canvas) = worldFrame(w, h)
+        val rows = listOf(
+            ServerRow("Hypixel", "mc.hypixel.net", "Bedwars · SkyBlock · 30+ minigames", "84231/200000", 23, ServerStatus.Online),
+            ServerRow("CubeCraft", "play.cubecraft.net", "Lucky Islands · EggWars", "12044/55000", 41, ServerStatus.Online),
+            ServerRow("My SMP", "smp.example.net", "Private survival realm", "3/20", 8, ServerStatus.Online),
+            ServerRow("Old Server", "dead.example.net", "Can't connect to server", "", -1, ServerStatus.Offline),
+            ServerRow("Resolving…", "new.example.net", "", "", -1, ServerStatus.Pinging),
+        )
+        ServerSelectRenderer.render(canvas, w, h, -1, -1, rows, selected = 0, scrollY = 0)
+        assertTrue(write(img, "04-server.png").length() > 0)
+    }
+
+    @Test fun `render options screen`() {
+        val w = 520; val h = 360
+        val (img, canvas) = frame(w, h)
+        val items = listOf(
+            OptionItem("fov", "FOV", OptionKind.Slider, "70", fraction = 0.5f),
+            OptionItem("gui", "GUI Scale", OptionKind.Cycle, "Auto"),
+            OptionItem("vsync", "VSync", OptionKind.Toggle, "On", on = true),
+            OptionItem("fancy", "Graphics", OptionKind.Cycle, "Fancy"),
+            OptionItem("rd", "Render Distance", OptionKind.Slider, "16 chunks", fraction = 0.5f),
+            OptionItem("bright", "Brightness", OptionKind.Slider, "50%", fraction = 0.5f),
+            OptionItem("clouds", "Clouds", OptionKind.Toggle, "Off", on = false),
+            OptionItem("vol", "Master Volume", OptionKind.Slider, "100%", fraction = 1f),
+        )
+        OptionsRenderer.render(canvas, w, h, -1, -1, items, hoveredIndex = 2)
+        assertTrue(write(img, "05-options.png").length() > 0)
+    }
 }

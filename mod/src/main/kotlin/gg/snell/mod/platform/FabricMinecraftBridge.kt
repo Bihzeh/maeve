@@ -176,6 +176,7 @@ internal open class ExtractorCanvas(
             .withItalic(run.italic)
             .withUnderlined(run.underline)
             .withStrikethrough(run.strikethrough)
+            .withFont(net.minecraft.network.chat.FontDescription.Resource(MONO_FONT)) // HUD readouts are Geist Mono
         // RGB on the Style + full color arg as fallback. MC's text color is RGB-only, so
         // text alpha is not honored here (background panels carry translucency instead).
         extractor.text(font, Component.literal(text).setStyle(style), x, y, run.color, run.shadow)
@@ -201,6 +202,19 @@ internal open class ExtractorCanvas(
     override val lineHeight: Int get() = font.lineHeight
     override val screenWidth: Int get() = extractor.guiWidth()
     override val screenHeight: Int get() = extractor.guiHeight()
+
+    override fun drawMono(x: Int, y: Int, text: String, color: Int) {
+        extractor.text(font, monoComponent(text), x, y, color, true)
+    }
+
+    override fun monoWidth(text: String): Int = font.width(monoComponent(text))
+
+    private fun monoComponent(text: String): Component =
+        Component.literal(text).setStyle(Style.EMPTY.withFont(net.minecraft.network.chat.FontDescription.Resource(MONO_FONT)))
+
+    private companion object {
+        val MONO_FONT = Identifier.fromNamespaceAndPath("snell", "mono")
+    }
 }
 
 /** Adds the editor overlay primitives to [ExtractorCanvas]. */
@@ -228,7 +242,7 @@ internal class EditorExtractorCanvas(
     override fun drawTexture(id: String, x: Int, y: Int, w: Int, h: Int) {
         val p = id.split(":", limit = 2)
         if (p.size != 2) return
-        extractor.blit(Identifier.fromNamespaceAndPath(p[0], p[1]), x, y, w, h, 0f, 1f, 0f, 1f)
+        extractor.blit(Identifier.fromNamespaceAndPath(p[0], p[1]), x, y, w, h, 0f, 0f, 1f, 1f)
     }
 
     private companion object {

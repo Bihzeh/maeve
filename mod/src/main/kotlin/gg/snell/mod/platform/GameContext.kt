@@ -48,6 +48,10 @@ interface HudCanvas {
     fun fill(x: Int, y: Int, w: Int, h: Int, color: Int)
     fun withScale(scale: Float, pivotX: Int, pivotY: Int, body: () -> Unit)
     fun textWidth(text: String): Int
+    /** Draw monospace text (Geist Mono, the `snell:mono` font) — for technical/numeric readouts. */
+    fun drawMono(x: Int, y: Int, text: String, color: Int)
+    /** Width of [text] in the monospace font. */
+    fun monoWidth(text: String): Int
     val lineHeight: Int
     val screenWidth: Int
     val screenHeight: Int

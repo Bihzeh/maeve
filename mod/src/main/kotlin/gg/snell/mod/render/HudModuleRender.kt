@@ -29,7 +29,7 @@ object HudModuleRender {
         val lines = module.render(ctx)
         if (lines.isEmpty()) return
         val pad = style.padding
-        val textW = lines.maxOf { canvas.textWidth(it.text) }
+        val textW = lines.maxOf { canvas.monoWidth(it.text) }
         val textH = lines.size * canvas.lineHeight
         val localW = textW + pad * 2
         val localH = textH + pad * 2
@@ -42,7 +42,7 @@ object HudModuleRender {
             if (style.background) canvas.fill(0, 0, localW, localH, style.backgroundColor)
             var lineY = pad
             for (line in lines) {
-                val lineW = canvas.textWidth(line.text)
+                val lineW = canvas.monoWidth(line.text)
                 val lineX = pad + HudLayout.lineX(0, textW, lineW, style.align)
                 val color = line.color ?: style.color
                 canvas.drawStyledText(

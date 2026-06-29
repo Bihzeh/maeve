@@ -168,9 +168,9 @@ object SnellUi {
     fun divider(canvas: EditorCanvas, x: Int, y: Int, w: Int, color: Int = rowBorder) =
         canvas.fill(x, y, w, 1, color)
 
-    /** Muted uppercase section label (no rule), like the design's section headers. */
+    /** Muted uppercase section label (no rule), in Geist Mono — section metadata. */
     fun sectionLabel(canvas: EditorCanvas, x: Int, y: Int, text: String) =
-        canvas.drawText(x, y, text.uppercase(), SnellPalette.menuText3)
+        canvas.drawMono(x, y, text.uppercase(), SnellPalette.menuText3)
 
     // ---- buttons / controls -------------------------------------------------------------------
 
@@ -269,7 +269,7 @@ object SnellUi {
     /** A thin track + cyan fill to [fraction] + white knob, with [valueText] right-aligned in accent. */
     fun slider(canvas: EditorCanvas, r: Rect, fraction: Float, valueText: String, valueW: Int = 0) {
         val f = fraction.coerceIn(0f, 1f)
-        val vw = if (valueText.isEmpty()) 0 else (if (valueW > 0) valueW else canvas.textWidth(valueText) + 6)
+        val vw = if (valueText.isEmpty()) 0 else (if (valueW > 0) valueW else canvas.monoWidth(valueText) + 6)
         val trackLeft = r.left
         val trackW = (r.width - vw - (if (vw > 0) 6 else 0)).coerceAtLeast(8)
         val trackH = 4
@@ -283,7 +283,7 @@ object SnellUi {
         val ky = r.top + (r.height - knob) / 2
         canvas.fill(kx, ky, knob, knob, WHITE)
         canvas.border(kx, ky, knob, knob, SnellPalette.accentHi)
-        if (vw > 0) canvas.drawText(r.right - canvas.textWidth(valueText), r.top + (r.height - canvas.lineHeight) / 2 + 1, valueText, SnellPalette.accent)
+        if (vw > 0) canvas.drawMono(r.right - canvas.monoWidth(valueText), r.top + (r.height - canvas.lineHeight) / 2 + 1, valueText, SnellPalette.accent)
     }
 
     /**
@@ -345,7 +345,7 @@ object SnellUi {
         canvas.fill(r.left, r.top, r.width, r.height - 1, rowFillHi)
         canvas.border(r.left, r.top, r.width, r.height, rowBorder)
         round(canvas, r, SnellPalette.menuPanel)
-        canvas.drawText(r.left + (r.width - canvas.textWidth(text)) / 2, r.top + (r.height - canvas.lineHeight) / 2, text, SnellPalette.text2)
+        canvas.drawMono(r.left + (r.width - canvas.monoWidth(text)) / 2, r.top + (r.height - canvas.lineHeight) / 2, text, SnellPalette.text2)
     }
 
     /** Text input chrome: inset field, accent border when focused, placeholder/caret. */

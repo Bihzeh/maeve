@@ -64,6 +64,19 @@ class MenuPreviewRenderTest {
             val img = javaClass.classLoader.getResourceAsStream(res)?.use { ImageIO.read(it) } ?: return
             g.drawImage(img, x, y, w, h, null)
         }
+
+        private val monoFont: Font? = javaClass.classLoader.getResourceAsStream("assets/snell/font/geist-mono.ttf")
+            ?.use { Font.createFont(Font.TRUETYPE_FONT, it).deriveFont(9f) }
+
+        override fun drawMono(x: Int, y: Int, text: String, color: Int) {
+            val saved = g.font; g.font = monoFont ?: saved
+            val fm = g.fontMetrics
+            g.color = Color(0, 0, 0, 140); g.drawString(text, x + 1f, y + fm.ascent + 1f)
+            g.color = col(color); g.drawString(text, x.toFloat(), y + fm.ascent.toFloat())
+            g.font = saved
+        }
+
+        override fun monoWidth(text: String) = monoFont?.let { g.getFontMetrics(it).stringWidth(text) } ?: textWidth(text)
     }
 
     private fun frame(w: Int, h: Int): Pair<BufferedImage, AwtCanvas> {

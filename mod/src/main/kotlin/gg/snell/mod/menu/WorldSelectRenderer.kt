@@ -40,7 +40,7 @@ object WorldSelectRenderer {
         SnellUi.icon(canvas, "back", back.left + back.width / 2, back.top + back.height / 2, 12, SnellPalette.text)
         val titleX = back.right + 9
         canvas.drawText(titleX, p.top + 6, "Singleplayer", SnellPalette.text)
-        canvas.drawText(titleX, p.top + 6 + canvas.lineHeight + 1, "${rows.size} ${if (rows.size == 1) "world" else "worlds"}", SnellPalette.menuText3)
+        canvas.drawMono(titleX, p.top + 6 + canvas.lineHeight + 1, "${rows.size} ${if (rows.size == 1) "world" else "worlds"}", SnellPalette.menuText3)
         SnellUi.textField(canvas, WorldSelectLayout.searchRect(w, h), search, searchFocused, "Search worlds")
         SnellUi.divider(canvas, p.left + 1, p.top + WorldSelectLayout.HEADER_H, p.width - 2)
 
@@ -74,8 +74,8 @@ object WorldSelectRenderer {
         canvas.drawText(tx, r.top + 5, name, SnellPalette.text)
         SnellUi.chip(canvas, tx + canvas.textWidth(name) + 6, r.top + 4, world.mode, modeColor(world.mode))
         val textW = r.right - 18 - tx
-        canvas.drawText(tx, r.top + 5 + canvas.lineHeight + 2, SnellUi.ellipsize(canvas, world.meta, textW), SnellPalette.text2)
-        canvas.drawText(tx, r.top + 5 + 2 * canvas.lineHeight + 3, SnellUi.ellipsize(canvas, world.detail, textW), SnellPalette.menuText3)
+        canvas.drawMono(tx, r.top + 5 + canvas.lineHeight + 2, SnellUi.ellipsize(canvas, world.meta, textW), SnellPalette.text2)
+        canvas.drawMono(tx, r.top + 5 + 2 * canvas.lineHeight + 3, SnellUi.ellipsize(canvas, world.detail, textW), SnellPalette.menuText3)
     }
 
     private fun modeColor(mode: String): Int = when {

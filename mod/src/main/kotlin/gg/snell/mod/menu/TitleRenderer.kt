@@ -44,7 +44,7 @@ object TitleRenderer {
             SnellUi.squareButton(canvas, r, hover)
             if (c.id == "wallet") {
                 SnellUi.icon(canvas, "wallet", r.left + 9, r.top + r.height / 2, 11, SnellPalette.gold)
-                canvas.drawText(r.left + 16, r.top + (r.height - canvas.lineHeight) / 2, crowns, SnellPalette.gold)
+                canvas.drawMono(r.left + 16, r.top + (r.height - canvas.lineHeight) / 2, crowns, SnellPalette.gold)
             } else {
                 SnellUi.icon(canvas, c.id, r.left + r.width / 2, r.top + r.height / 2, 12, SnellPalette.text2)
             }
@@ -52,7 +52,7 @@ object TitleRenderer {
         accountChip(canvas, TitleLayout.accountChip(w, h), username, statusLabel)
         whatsNew(canvas, TitleLayout.whatsNewRect(w, h), version)
 
-        canvas.drawText(22, h - 13, "SNELL $version  ·  Minecraft 26.2 · Fabric", SnellPalette.menuText3)
+        canvas.drawMono(22, h - 13, "SNELL $version  ·  Minecraft 26.2 · Fabric", SnellPalette.menuText3)
     }
 
     /** The Snell slipstream mark (texture) beside the scaled SNELL wordmark, inline left. */

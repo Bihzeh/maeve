@@ -24,6 +24,8 @@ internal class FakeHudCanvas(
         transforms.add(Transform(scale, pivotX, pivotY)); body()
     }
     override fun textWidth(text: String) = text.length * 6
+    override fun drawMono(x: Int, y: Int, text: String, color: Int) { draws.add(Draw(x, y, text, color, false)) }
+    override fun monoWidth(text: String) = text.length * 6
     override val lineHeight = 10
 }
 

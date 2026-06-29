@@ -38,7 +38,7 @@ object ServerSelectRenderer {
         SnellUi.icon(canvas, "back", back.left + back.width / 2, back.top + back.height / 2, 12, SnellPalette.text)
         val titleX = back.right + 9
         canvas.drawText(titleX, p.top + 6, "Multiplayer", SnellPalette.text)
-        canvas.drawText(titleX, p.top + 6 + canvas.lineHeight + 1, "${rows.size} ${if (rows.size == 1) "server" else "servers"}", SnellPalette.menuText3)
+        canvas.drawMono(titleX, p.top + 6 + canvas.lineHeight + 1, "${rows.size} ${if (rows.size == 1) "server" else "servers"}", SnellPalette.menuText3)
         val refresh = ServerSelectLayout.refreshButton(w, h)
         SnellUi.squareButton(canvas, refresh, refresh.contains(mouseX, mouseY))
         SnellUi.icon(canvas, "refresh", refresh.left + refresh.width / 2, refresh.top + refresh.height / 2, 12, SnellPalette.text2)
@@ -75,12 +75,12 @@ object ServerSelectRenderer {
 
         when (row.status) {
             ServerStatus.Online -> {
-                if (row.players.isNotEmpty()) canvas.drawText(rx - canvas.textWidth(row.players), r.top + 6, row.players, SnellPalette.text)
+                if (row.players.isNotEmpty()) canvas.drawMono(rx - canvas.monoWidth(row.players), r.top + 6, row.players, SnellPalette.text)
                 val pc = pingColor(row.ping)
                 drawBars(canvas, rx - 16, r.top + r.height - 9, pc, barsFor(row.ping))
                 if (row.ping >= 0) {
                     val pt = "${row.ping}ms"
-                    canvas.drawText(rx - 18 - canvas.textWidth(pt), r.top + r.height - 12, pt, pc)
+                    canvas.drawMono(rx - 18 - canvas.monoWidth(pt), r.top + r.height - 12, pt, pc)
                 }
             }
             ServerStatus.Offline -> rightPill(canvas, r, rx, "Offline", PillRole.Offline)

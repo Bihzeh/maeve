@@ -151,30 +151,29 @@ private fun JoinButton() {
 private fun LaunchBar(vm: LauncherViewModel, shape: Shape = LaunchAllShape) {
     val enabled = vm.session != null && !vm.playing
     Row(
-        Modifier.fillMaxWidth().height(72.dp)
-            .then(if (enabled) Modifier.shadow(16.dp, shape, ambientColor = Snell.accent, spotColor = Snell.accent) else Modifier)
+        Modifier.fillMaxWidth().height(48.dp)
+            .then(if (enabled) Modifier.shadow(10.dp, shape, ambientColor = Snell.accent, spotColor = Snell.accent) else Modifier)
             .clip(shape).background(Brush.horizontalGradient(listOf(Snell.accentHi, Snell.accent))),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             Modifier.weight(1f).fillMaxHeight()
                 .clickable(enabled = enabled, interactionSource = remember { MutableInteractionSource() }, indication = null) { vm.play() }
-                .padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            SymIcon("play_arrow", 30.dp, Snell.onAccent)
-            Column {
-                Text("LAUNCH", fontFamily = SnellFonts.Display, fontWeight = FontWeight.Bold, fontSize = 22.sp, letterSpacing = 1.sp, color = Snell.onAccent)
-                Text("Snell Client ${Versions.MINECRAFT}", color = Snell.onAccent.copy(alpha = 0.72f), style = MaterialTheme.typography.labelMedium)
-            }
+            SymIcon("play_arrow", 18.dp, Snell.onAccent)
+            Text("LAUNCH", fontFamily = SnellFonts.Display, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 1.sp, color = Snell.onAccent)
+            Spacer(Modifier.width(2.dp))
+            Text("Snell Client ${Versions.MINECRAFT}", color = Snell.onAccent.copy(alpha = 0.72f), style = MaterialTheme.typography.labelSmall)
         }
-        Box(Modifier.width(1.dp).height(40.dp).background(Snell.onAccent.copy(alpha = 0.25f)))
+        Box(Modifier.width(1.dp).height(22.dp).background(Snell.onAccent.copy(alpha = 0.25f)))
         Box(
             Modifier.fillMaxHeight()
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { /* profile/version dropdown — follow-up */ }
-                .padding(horizontal = 22.dp),
+                .padding(horizontal = 14.dp),
             contentAlignment = Alignment.Center,
-        ) { SymIcon("expand_more", 26.dp, Snell.onAccent) }
+        ) { SymIcon("expand_more", 18.dp, Snell.onAccent) }
     }
 }
 

@@ -19,6 +19,8 @@ import gg.snell.launcher.ui.chrome.WindowChrome
 import gg.snell.launcher.ui.components.Brand
 import gg.snell.launcher.ui.theme.SnellTheme
 import java.awt.Dimension
+import java.awt.Rectangle
+import java.awt.Toolkit
 
 fun main() = application {
     val state = rememberWindowState(width = 1280.dp, height = 800.dp, position = WindowPosition(Alignment.Center))
@@ -37,8 +39,22 @@ fun main() = application {
             WindowChrome(
                 onMinimize = { state.isMinimized = true },
                 onToggleMaximize = {
-                    state.placement =
-                        if (state.placement == WindowPlacement.Maximized) WindowPlacement.Floating else WindowPlacement.Maximized
+                    if (state.placement == WindowPlacement.Maximized) {
+                        state.placement = WindowPlacement.Floating
+                    } else {
+                        // The window is undecorated, so MAXIMIZED_BOTH would otherwise cover the OS
+                        // taskbar. Constrain it to the current monitor's work area (bounds minus screen
+                        // insets) so it maximizes to the taskbar like a normal app. Recomputed per toggle
+                        // so it follows the window across monitors.
+                        val gc = window.graphicsConfiguration
+                        val b = gc.bounds
+                        val ins = Toolkit.getDefaultToolkit().getScreenInsets(gc)
+                        window.maximizedBounds = Rectangle(
+                            b.x + ins.left, b.y + ins.top,
+                            b.width - ins.left - ins.right, b.height - ins.top - ins.bottom,
+                        )
+                        state.placement = WindowPlacement.Maximized
+                    }
                 },
                 onClose = { exitApplication() },
                 dragWrapper = { content -> WindowDraggableArea { content() } },

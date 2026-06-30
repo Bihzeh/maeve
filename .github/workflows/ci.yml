@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -72,4 +73,43 @@ jobs:
         with:
           name: snell-ui-previews
           path: launcher/build/ui-preview/*.png
+          if-no-files-found: error
+
+  # Real in-game renders of the bespoke Snell menus: boots the dev client headless under xvfb +
+  # Mesa software GL, ScreenshotDriver opens each menu and grabs the framebuffer to a PNG. This is
+  # the authoritative verification the menus lacked (the AWT preview diverges from real MC rendering).
+  menu-screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xvfb + Mesa software GL (llvmpipe; lavapipe fallback)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb mesa-utils libgl1 libglx-mesa0 libgl1-mesa-dri mesa-vulkan-drivers
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Cache Loom (Minecraft 26.2 provision)
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches/fabric-loom
+          key: loom-${{ runner.os }}-26.2
+      - name: Render Snell menus (headless, software GL)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "true"
+          GALLIUM_DRIVER: "llvmpipe"
+          MESA_GL_VERSION_OVERRIDE: "4.5"
+          MESA_GLSL_VERSION_OVERRIDE: "450"
+        run: |
+          xvfb-run -a -s "-screen 0 1280x720x24" \
+            ./gradlew :mod:runScreenshots --no-daemon --console=plain
+      - name: Upload menu screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snell-menu-shots
+          path: mod/build/menu-shots/*.png
           if-no-files-found: error

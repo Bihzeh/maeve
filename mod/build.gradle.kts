@@ -36,6 +36,24 @@ loom {
     mixin {
         defaultRefmapName.set("snell.refmap.json")
     }
+    runs {
+        // Manual client for eyeballing the bespoke menus live: ./gradlew :mod:runClient
+        named("client") {
+            runDir("run")
+        }
+        // Headless screenshot capture: ./gradlew :mod:runScreenshots
+        // ScreenshotDriver (behind -Dsnell.shotmode) opens each Snell menu, writes
+        // build/menu-shots/snell-*.png, then quits. Force the GL backend so Mesa/llvmpipe
+        // (software GL under xvfb in CI) renders the 26.2 Blaze3D path.
+        create("screenshots") {
+            client()
+            configName = "Snell Screenshots"
+            runDir("run")
+            programArgs("--graphicsBackend", "opengl", "--width", "1280", "--height", "720")
+            property("snell.shotmode", "1")
+            property("snell.shotdir", layout.buildDirectory.dir("menu-shots").get().asFile.absolutePath)
+        }
+    }
 }
 
 tasks.processResources {

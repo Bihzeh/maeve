@@ -58,6 +58,13 @@ class SnellMod : ClientModInitializer {
         // Apply the persisted font choice after the first client tick (never reload during init).
         bridge.applyCustomFontOnStartup(modules.byId("font")?.enabled ?: true)
 
+        // Headless screenshot harness: when -Dsnell.shotmode is set (./gradlew :mod:runScreenshots / CI),
+        // capture a real in-game render of every Snell menu to -Dsnell.shotdir, then quit.
+        System.getProperty("snell.shotmode")?.let {
+            val dir = java.nio.file.Path.of(System.getProperty("snell.shotdir", "build/menu-shots"))
+            gg.snell.mod.platform.ScreenshotDriver.install(dir)
+        }
+
         LOG.info("Snell initialized: {} modules", modules.all().size)
     }
 

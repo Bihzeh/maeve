@@ -19,6 +19,20 @@ class MenuLayoutTest {
         assertTrue(foot.first().rect.top >= nav.last().rect.bottom, "foot below nav")
     }
 
+    @Test fun `title featured discord card is taller and its link hit-maps to discord`() {
+        val nav = TitleLayout.navButtons(w, h)
+        val discord = nav.first { it.id == "discord" }.rect
+        val sp = nav.first { it.id == "singleplayer" }.rect
+        assertEquals(46, discord.height, "featured card height = FEAT_H")
+        assertTrue(discord.height > sp.height, "featured card taller than the plain nav rows")
+        val link = TitleLayout.linkButton(w, h)
+        assertTrue(
+            link.left >= discord.left && link.right <= discord.right && link.top >= discord.top && link.bottom <= discord.bottom,
+            "link CTA fully inside the discord card",
+        )
+        assertEquals("discord", TitleLayout.hit(w, h, link.left + link.width / 2, link.top + link.height / 2))
+    }
+
     @Test fun `title hit maps a nav row and misses the empty corner`() {
         val sp = TitleLayout.navButtons(w, h).first { it.id == "singleplayer" }.rect
         assertEquals("singleplayer", TitleLayout.hit(w, h, sp.left + 2, sp.top + 2))

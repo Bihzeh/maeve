@@ -38,6 +38,20 @@ object WorldAdapter {
         return WorldRow(s.levelName, s.levelId, mode, meta, s.levelId)
     }
 
+    /** World count + the most-recent "last played" relative string, for the title's Singleplayer subtitle. */
+    fun summary(mc: Minecraft, onResult: (Int, String) -> Unit) {
+        try {
+            val src = mc.levelSource
+            src.loadLevelSummaries(src.findLevelCandidates()).thenAccept { summaries ->
+                val live = summaries.filter { !it.isDisabled }
+                val recent = live.maxOfOrNull { it.lastPlayed } ?: 0L
+                mc.execute { onResult(live.size, if (recent > 0L) relative(recent) else "") }
+            }
+        } catch (e: Exception) {
+            mc.execute { onResult(0, "") }
+        }
+    }
+
     private fun relative(t: Long): String {
         if (t <= 0L) return "never played"
         val d = System.currentTimeMillis() - t

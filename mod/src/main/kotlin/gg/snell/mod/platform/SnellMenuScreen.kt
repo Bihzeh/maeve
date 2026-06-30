@@ -1,5 +1,6 @@
 package gg.snell.mod.platform
 
+import gg.snell.mod.ui.SnellUi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
@@ -40,6 +41,35 @@ abstract class SnellMenuScreen(title: Component) : Screen(title) {
     protected open fun onKey(keyCode: Int): Boolean = false
     /** A typed character; return true to consume. */
     protected open fun onCharTyped(ch: Char): Boolean = false
+
+    /** Whether this screen wants the live (blurred) title panorama when no world is loaded. Pause opts out. */
+    protected open val wantsPanorama: Boolean get() = true
+
+    /**
+     * Replace vanilla's background (dirt dim / its own panorama dispatch) with ours: the live rotating
+     * title panorama + forced blur + the mockup scrims when no world is loaded (title / world / server),
+     * else a flat scrim over the blurred live world (pause / options-from-pause). Runs in the background
+     * stratum before the UI, so [blurBeforeThisStratum] blurs the scene but not the sharp Snell cards.
+     */
+    override fun extractBackground(extractor: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, deltaTicks: Float) {
+        val canvas = EditorExtractorCanvas(extractor, mc.font)
+        if (mc.level == null && wantsPanorama) {
+            val ok = runCatching {
+                mc.gameRenderer.panorama().startSpin()
+                mc.gameRenderer.panorama().extractRenderState(extractor, width, height)
+            }.isSuccess
+            if (!ok) { // headless/edge: fall back to the procedural dusk gradient
+                SnellUi.backdrop(canvas, width, height)
+                SnellUi.menuScrims(canvas, width, height)
+                return
+            }
+            extractor.blurBeforeThisStratum()
+            SnellUi.menuScrims(canvas, width, height)
+        } else {
+            extractor.blurBeforeThisStratum()
+            SnellUi.pauseScrim(canvas, width, height)
+        }
+    }
 
     override fun extractRenderState(extractor: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, deltaTicks: Float) {
         super.extractRenderState(extractor, mouseX, mouseY, deltaTicks)

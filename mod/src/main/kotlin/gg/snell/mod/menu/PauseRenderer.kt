@@ -14,7 +14,7 @@ import gg.snell.shared.SnellPalette
  */
 object PauseRenderer {
     fun render(canvas: EditorCanvas, w: Int, h: Int, mouseX: Int, mouseY: Int, worldName: String = "World") {
-        SnellUi.scrim(canvas, w, h)
+        // scrim over the blurred live world is painted by SnellMenuScreen.extractBackground
         val p = PauseLayout.panelRect(w, h)
         SnellUi.panel(canvas, p)
 

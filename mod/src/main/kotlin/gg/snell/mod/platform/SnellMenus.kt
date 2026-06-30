@@ -20,6 +20,10 @@ object SnellMenus {
     @Volatile
     var modules: ModuleManager? = null
 
-    /** Client version shown in menu footers. */
-    const val VERSION: String = "26.2"
+    /** Snell mod version shown in menu footers; set once at init from the Fabric mod metadata. */
+    @Volatile
+    var modVersion: String = "0.0.0"
+
+    /** Target Minecraft version (single source of truth). */
+    val mcVersion: String get() = gg.snell.shared.Versions.MINECRAFT
 }

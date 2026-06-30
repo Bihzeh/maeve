@@ -71,4 +71,8 @@ interface EditorCanvas : HudCanvas {
     fun iconWidth(glyph: Char): Int
     /** Blit a full texture (namespaced id, e.g. "snell:textures/gui/snell_mark.png") into the box ([x],[y],[w],[h]). */
     fun drawTexture(id: String, x: Int, y: Int, w: Int, h: Int)
+    /** Draw large display text (Geist at its native size, the `snell:display` font) for headings/wordmarks. */
+    fun drawDisplay(x: Int, y: Int, text: String, color: Int)
+    /** Width of [text] in the display font at its native size (for centring + manual letter-spacing). */
+    fun displayWidth(text: String): Int
 }

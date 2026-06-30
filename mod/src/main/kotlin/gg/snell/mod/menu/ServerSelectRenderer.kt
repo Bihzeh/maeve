@@ -15,7 +15,7 @@ import gg.snell.shared.SnellPalette
  */
 object ServerSelectRenderer {
     fun render(canvas: EditorCanvas, w: Int, h: Int, mouseX: Int, mouseY: Int, rows: List<ServerRow>, selected: Int, scrollY: Int) {
-        SnellUi.scrim(canvas, w, h)
+        // scrim/panorama backdrop is painted by SnellMenuScreen.extractBackground
         val p = ServerSelectLayout.panelRect(w, h)
         SnellUi.panel(canvas, p)
 
@@ -38,7 +38,7 @@ object ServerSelectRenderer {
         SnellUi.icon(canvas, "back", back.left + back.width / 2, back.top + back.height / 2, 12, SnellPalette.text)
         val titleX = back.right + 9
         canvas.drawText(titleX, p.top + 6, "Multiplayer", SnellPalette.text)
-        canvas.drawMono(titleX, p.top + 6 + canvas.lineHeight + 1, "${rows.size} ${if (rows.size == 1) "server" else "servers"}", SnellPalette.menuText3)
+        canvas.drawText(titleX, p.top + 6 + canvas.lineHeight + 1, "${rows.size} ${if (rows.size == 1) "server" else "servers"}", SnellPalette.menuText3)
         val refresh = ServerSelectLayout.refreshButton(w, h)
         SnellUi.squareButton(canvas, refresh, refresh.contains(mouseX, mouseY))
         SnellUi.icon(canvas, "refresh", refresh.left + refresh.width / 2, refresh.top + refresh.height / 2, 12, SnellPalette.text2)

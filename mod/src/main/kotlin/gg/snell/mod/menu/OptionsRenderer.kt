@@ -19,7 +19,7 @@ object OptionsRenderer {
         canvas: EditorCanvas, w: Int, h: Int, mouseX: Int, mouseY: Int,
         entries: List<OptionEntry>, activeCategory: String, scrollY: Int,
     ) {
-        SnellUi.backdrop(canvas, w, h)
+        // backdrop is painted by SnellMenuScreen.extractBackground (panorama from the menu, scrim from pause)
         val p = OptionsLayout.panelRect(w, h)
         SnellUi.panel(canvas, p)
 

@@ -126,7 +126,10 @@ class FabricMinecraftBridge : MinecraftBridge {
 
     override fun registerFontPack() {
         val container = FabricLoader.getInstance().getModContainer("snell").orElseThrow()
-        ResourceLoader.registerBuiltinPack(FONT_PACK, container, PackActivationType.NORMAL)
+        SnellMenus.modVersion = container.metadata.version.friendlyString // real mod version for menu footers
+        // DEFAULT_ENABLED: selected at the initial resource load so Geist is crisp from the first frame
+        // (no post-tick reload flash), while staying user-toggleable via FontModule.
+        ResourceLoader.registerBuiltinPack(FONT_PACK, container, PackActivationType.DEFAULT_ENABLED)
     }
 
     override fun isCustomFontEnabled(): Boolean =
@@ -249,7 +252,17 @@ internal class EditorExtractorCanvas(
         extractor.blit(Identifier.fromNamespaceAndPath(p[0], p[1]), x, y, w, h, 0f, 0f, 1f, 1f)
     }
 
+    override fun drawDisplay(x: Int, y: Int, text: String, color: Int) {
+        extractor.text(font, displayComponent(text), x, y, color, true)
+    }
+
+    override fun displayWidth(text: String): Int = font.width(displayComponent(text))
+
+    private fun displayComponent(text: String): Component =
+        Component.literal(text).setStyle(Style.EMPTY.withFont(net.minecraft.network.chat.FontDescription.Resource(DISPLAY_FONT)))
+
     private companion object {
         val ICONS_FONT = Identifier.fromNamespaceAndPath("snell", "icons")
+        val DISPLAY_FONT = Identifier.fromNamespaceAndPath("snell", "display")
     }
 }

@@ -15,8 +15,17 @@ import net.minecraft.network.chat.Component
  */
 class SnellPauseScreen : SnellMenuScreen(Component.literal("Paused")) {
 
+    // Always over the live world → flat scrim, never the title panorama.
+    override val wantsPanorama: Boolean get() = false
+
     override fun draw(canvas: EditorCanvas, mouseX: Int, mouseY: Int) =
-        PauseRenderer.render(canvas, width, height, mouseX, mouseY, if (mc.hasSingleplayerServer()) "Singleplayer World" else "Multiplayer Server")
+        PauseRenderer.render(canvas, width, height, mouseX, mouseY, worldName())
+
+    /** The real world/server name for the pause card header, with a safe fallback. */
+    private fun worldName(): String = runCatching {
+        if (mc.hasSingleplayerServer()) mc.singleplayerServer?.worldData?.levelName ?: "Singleplayer"
+        else mc.currentServer?.name?.ifBlank { mc.currentServer?.ip ?: "" }?.ifBlank { "Multiplayer Server" } ?: "Multiplayer Server"
+    }.getOrDefault(if (mc.hasSingleplayerServer()) "Singleplayer" else "Multiplayer Server")
 
     override fun hitId(mouseX: Int, mouseY: Int): String? = PauseLayout.hit(width, height, mouseX, mouseY)
 

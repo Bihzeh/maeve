@@ -2,6 +2,7 @@ package gg.snell.mod.menu
 
 import gg.snell.mod.platform.EditorCanvas
 import gg.snell.mod.platform.TextRun
+import gg.snell.mod.ui.SnellUi
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Font
@@ -81,6 +82,19 @@ class MenuPreviewRenderTest {
         }
 
         override fun monoWidth(text: String) = monoFont?.let { g.getFontMetrics(it).stringWidth(text) } ?: textWidth(text)
+
+        private val displayFont: Font? = javaClass.classLoader.getResourceAsStream("assets/snell/font/geist.ttf")
+            ?.use { Font.createFont(Font.TRUETYPE_FONT, it).deriveFont(62f) }
+
+        override fun drawDisplay(x: Int, y: Int, text: String, color: Int) {
+            val f = displayFont ?: run { drawText(x, y, text, color); return }
+            val saved = g.font; g.font = f
+            val fm = g.fontMetrics
+            g.color = col(color); g.drawString(text, x.toFloat(), y + fm.ascent.toFloat())
+            g.font = saved
+        }
+
+        override fun displayWidth(text: String) = displayFont?.let { g.getFontMetrics(it).stringWidth(text) } ?: textWidth(text)
     }
 
     private fun frame(w: Int, h: Int): Pair<BufferedImage, AwtCanvas> {
@@ -103,16 +117,22 @@ class MenuPreviewRenderTest {
     }
 
     @Test fun `render title screen`() {
-        val w = 480; val h = 270
+        val w = 640; val h = 360 // ≈ a real in-game GUI width (so the command column hits its 280px clamp)
         val (img, canvas) = frame(w, h)
+        SnellUi.backdrop(canvas, w, h); SnellUi.menuScrims(canvas, w, h) // stands in for the live blurred panorama
         val sp = TitleLayout.navButtons(w, h).first { it.id == "singleplayer" }.rect
-        TitleRenderer.render(canvas, w, h, sp.left + sp.width / 2, sp.top + sp.height / 2, version = "26.2", username = "SnellQueen", statusLabel = "Online", crowns = "2,450")
+        TitleRenderer.render(
+            canvas, w, h, sp.left + sp.width / 2, sp.top + sp.height / 2,
+            modVersion = "1.4.0", mcVersion = "26.2", username = "SnellQueen", statusLabel = "Online",
+            crowns = "2,450", singleplayerSub = "5 worlds · last played just now", multiplayerSub = "8 servers",
+        )
         assertTrue(write(img, "01-title.png").length() > 0)
     }
 
     @Test fun `render pause menu`() {
         val w = 480; val h = 270
         val (img, canvas) = worldFrame(w, h)
+        SnellUi.pauseScrim(canvas, w, h)
         val opt = PauseLayout.controls(w, h).first { it.id == "options" }.rect
         PauseRenderer.render(canvas, w, h, opt.left + opt.width / 2, opt.top + opt.height / 2, worldName = "Survival World")
         assertTrue(write(img, "02-pause.png").length() > 0)
@@ -121,6 +141,7 @@ class MenuPreviewRenderTest {
     @Test fun `render world picker`() {
         val w = 520; val h = 360
         val (img, canvas) = worldFrame(w, h)
+        SnellUi.backdrop(canvas, w, h); SnellUi.menuScrims(canvas, w, h)
         val rows = listOf(
             WorldRow("New World", "New World", "Survival", "1.21 · 2 minutes ago", "2.1 GB"),
             WorldRow("Hardcore Attempt 4", "Hardcore", "Hardcore", "1.21 · yesterday", "880 MB"),
@@ -135,6 +156,7 @@ class MenuPreviewRenderTest {
     @Test fun `render server picker`() {
         val w = 520; val h = 360
         val (img, canvas) = worldFrame(w, h)
+        SnellUi.backdrop(canvas, w, h); SnellUi.menuScrims(canvas, w, h)
         val rows = listOf(
             ServerRow("Hypixel", "mc.hypixel.net", "Bedwars · SkyBlock · 30+ minigames", "84231", 23, ServerStatus.Online),
             ServerRow("CubeCraft", "play.cubecraft.net", "Lucky Islands · EggWars", "12044", 41, ServerStatus.Online),
@@ -149,6 +171,7 @@ class MenuPreviewRenderTest {
     @Test fun `render options screen`() {
         val w = 520; val h = 360
         val (img, canvas) = frame(w, h)
+        SnellUi.backdrop(canvas, w, h); SnellUi.menuScrims(canvas, w, h)
         val entries = listOf(
             OptionEntry.Section("Rendering"),
             OptionEntry.Item(OptionItem("rd", "Render Distance", OptionKind.Slider, "16 chunks", fraction = 0.45f, description = "Chunks loaded around you")),

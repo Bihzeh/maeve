@@ -135,22 +135,19 @@ object SnellUi {
         canvas.withScale(scale, px, py) { canvas.drawIcon(ch, 0, 0, color) }
     }
 
+    private const val SLIPSTREAM_TEX = "snell:textures/gui/snell_mark.png"
+
     /**
-     * The Snell slipstream brand mark — three rounded cyan bars (middle widest), proportioned from
-     * the brand SVG. Drawn with fills so it renders identically in-game and in the headless preview
-     * (unlike a texture blit, which the preview can't reproduce).
+     * The Snell slipstream brand mark — blitted from the bundled cyan texture (both the runtime
+     * extractor and the headless menu preview blit; the only no-blit canvas, the HUD-editor preview,
+     * never draws this mark). The PNG carries transparent margins (the bars occupy the middle ~40%),
+     * so it's drawn into a slightly larger box centred on the (x,y,size) cell to match the wordmark's
+     * optical weight. [color] is unused (the texture carries its own colour); kept for call-site symmetry.
      */
     fun slipstream(canvas: EditorCanvas, x: Int, y: Int, size: Int, color: Int = SnellPalette.accent) {
-        val bars = arrayOf(
-            floatArrayOf(0.453f, 0.086f, 0.336f), // width-frac, height-frac, centre-y-frac
-            floatArrayOf(0.594f, 0.102f, 0.500f),
-            floatArrayOf(0.406f, 0.086f, 0.664f),
-        )
-        for (b in bars) {
-            val bw = (size * b[0]).toInt().coerceAtLeast(2)
-            val bh = (size * b[1]).toInt().coerceAtLeast(2)
-            canvas.fill(x + (size - bw) / 2, y + (size * b[2]).toInt() - bh / 2, bw, bh, color)
-        }
+        val box = (size * 1.35f).toInt()
+        val off = (box - size) / 2
+        canvas.drawTexture(SLIPSTREAM_TEX, x - off, y - off, box, box)
     }
 
     /** Presence colour: green online / gold away / red offline. */
@@ -181,6 +178,30 @@ object SnellUi {
     fun scrim(canvas: EditorCanvas, w: Int, h: Int) =
         canvas.fill(0, 0, w, h, SnellPalette.withAlpha(SnellPalette.menuBase, 0xCC))
 
+    private val night = 0xFF0B0A12.toInt() // the mockup's rgba(11,10,18) scrim base
+
+    /**
+     * The mockup's radial + linear scrims, drawn translucently OVER the live blurred panorama (so the
+     * scene shows through). GuiGraphics has only vertical gradients, so the CSS radial (focus ~32%
+     * height) and linear (0.45→0.05@38%→0.68) are approximated as stacked vertical bands: lightest near
+     * the focus, darkening to the top edge and (more) to the bottom so the command column reads.
+     */
+    fun menuScrims(canvas: EditorCanvas, w: Int, h: Int) {
+        val r = (h * 0.32f).toInt(); val m = (h * 0.38f).toInt()
+        canvas.gradientV(0, 0, w, r, SnellPalette.withAlpha(SnellPalette.menuBase, 0x55), SnellPalette.withAlpha(night, 0x1A))
+        canvas.gradientV(0, r, w, h - r, SnellPalette.withAlpha(night, 0x1A), SnellPalette.withAlpha(SnellPalette.menuBase, 0xB8))
+        canvas.gradientV(0, 0, w, m, SnellPalette.withAlpha(night, 0x73), SnellPalette.withAlpha(night, 0x0D))
+        canvas.gradientV(0, m, w, h - m, SnellPalette.withAlpha(night, 0x0D), SnellPalette.withAlpha(SnellPalette.menuBase, 0xAD))
+    }
+
+    /**
+     * Flat scrim over the live world (pause / options-from-pause). The mockup blurs the world too, but
+     * blur can no-op on some GPU paths, so the alpha is kept heavy enough (~0x9E) to keep the world
+     * obscured on its own — heavier than the mockup's 0.5 but well short of an opaque dim.
+     */
+    fun pauseScrim(canvas: EditorCanvas, w: Int, h: Int) =
+        canvas.fill(0, 0, w, h, SnellPalette.withAlpha(SnellPalette.menuBase, 0x9E))
+
     /** Card/panel surface: soft drop shadow, translucent-purple fill, white-alpha border, round corners. */
     fun panel(canvas: EditorCanvas, r: Rect, under: Int = SnellPalette.menuBase) {
         canvas.fill(r.left + 4, r.bottom, r.width, 4, shadow)
@@ -194,9 +215,9 @@ object SnellUi {
     fun divider(canvas: EditorCanvas, x: Int, y: Int, w: Int, color: Int = rowBorder) =
         canvas.fill(x, y, w, 1, color)
 
-    /** Muted uppercase section label (no rule), in Geist Mono — section metadata. */
+    /** Muted uppercase section label (no rule), in proportional Geist — section metadata. */
     fun sectionLabel(canvas: EditorCanvas, x: Int, y: Int, text: String) =
-        canvas.drawMono(x, y, text.uppercase(), SnellPalette.menuText3)
+        canvas.drawText(x, y, text.uppercase(), SnellPalette.menuText3)
 
     // ---- buttons / controls -------------------------------------------------------------------
 
@@ -277,6 +298,98 @@ object SnellUi {
         canvas.drawText(tx, ty, ellipsize(canvas, title, r.right - 22 - tx), SnellPalette.text)
         canvas.drawText(tx, ty + canvas.lineHeight + 2, ellipsize(canvas, subtitle, r.right - 22 - tx), SnellPalette.text2)
         chevronRight(canvas, r.right - 12, r.top + r.height / 2, 3, SnellPalette.menuText3)
+        return tileRect
+    }
+
+    /** Full-ARGB lerp (alpha included), unlike [blend] which keeps a's alpha. */
+    private fun blendArgb(a: Int, b: Int, f: Float): Int {
+        fun ch(s: Int, sh: Int) = (s ushr sh) and 0xFF
+        val na = (ch(a, 24) + (ch(b, 24) - ch(a, 24)) * f).toInt().coerceIn(0, 255)
+        val nr = (ch(a, 16) + (ch(b, 16) - ch(a, 16)) * f).toInt().coerceIn(0, 255)
+        val ng = (ch(a, 8) + (ch(b, 8) - ch(a, 8)) * f).toInt().coerceIn(0, 255)
+        val nb = (ch(a, 0) + (ch(b, 0) - ch(a, 0)) * f).toInt().coerceIn(0, 255)
+        return (na shl 24) or (nr shl 16) or (ng shl 8) or nb
+    }
+
+    /** Approximate a horizontal gradient (MC has only vertical) with [steps] vertical strips, [left]→[right] (alpha included). */
+    fun gradientHApprox(canvas: EditorCanvas, r: Rect, left: Int, right: Int, steps: Int = 12) {
+        val n = steps.coerceAtLeast(1)
+        for (i in 0 until n) {
+            val f = if (n == 1) 0f else i / (n - 1f)
+            val x0 = r.left + (r.width * i) / n
+            val x1 = r.left + (r.width * (i + 1)) / n
+            canvas.fill(x0, r.top, (x1 - x0).coerceAtLeast(1), r.height, blendArgb(left, right, f))
+        }
+    }
+
+    /** A solid filled badge (e.g. "REWARDS") — caller passes already-cased text. Returns its width. */
+    fun badge(canvas: EditorCanvas, x: Int, y: Int, text: String, bg: Int, fg: Int = WHITE): Int {
+        val w = canvas.textWidth(text) + 10
+        val h = canvas.lineHeight + 3
+        canvas.fill(x, y, w, h, bg)
+        round(canvas, Rect(x, y, w, h), SnellPalette.menuPanel)
+        canvas.drawText(x + 5, y + (h - canvas.lineHeight) / 2, text, fg)
+        return w
+    }
+
+    /** A solid brand-coloured button (the Discord "Link →" CTA): solid [bg], centred [fg] text + optional trailing icon. */
+    fun solidButton(canvas: EditorCanvas, r: Rect, text: String, bg: Int, fg: Int = WHITE, hover: Boolean = false, iconName: String? = null) {
+        canvas.fill(r.left, r.top, r.width, r.height, if (hover) lighten(bg, 0.12f) else bg)
+        round(canvas, r, SnellPalette.menuPanel)
+        val ty = r.top + (r.height - canvas.lineHeight) / 2 + 1
+        val tw = canvas.textWidth(text)
+        if (iconName != null) {
+            val isz = (r.height - 8).coerceIn(7, 11)
+            val sx = r.left + (r.width - (tw + 4 + isz)) / 2
+            canvas.drawText(sx, ty, text, fg)
+            icon(canvas, iconName, sx + tw + 4 + isz / 2, r.top + r.height / 2, isz, fg)
+        } else {
+            canvas.drawText(r.left + (r.width - tw) / 2, ty, text, fg)
+        }
+    }
+
+    /** The gold wallet pill (top-right crown balance): gold-tinted chrome, coin glyph + mono [value]. */
+    fun walletPill(canvas: EditorCanvas, r: Rect, value: String, hover: Boolean = false) {
+        canvas.fill(r.left, r.top, r.width, r.height, SnellPalette.withAlpha(SnellPalette.gold, if (hover) 0x26 else 0x1A))
+        canvas.border(r.left, r.top, r.width, r.height, SnellPalette.withAlpha(SnellPalette.gold, if (hover) 0x73 else 0x52))
+        round(canvas, r, SnellPalette.menuPanel)
+        icon(canvas, "wallet", r.left + 10, r.top + r.height / 2, 11, SnellPalette.gold)
+        canvas.drawMono(r.left + 18, r.top + (r.height - canvas.lineHeight) / 2, value, SnellPalette.gold)
+    }
+
+    /**
+     * The featured Discord nav card: a Discord-tinted gradient fill + glow, a solid brand icon tile, a
+     * "REWARDS" [badgeText], a muted [subtitle], and a solid [linkLabel] CTA drawn into [linkRect].
+     * Caller draws the tile glyph into the returned icon-tile rect. Visually distinct from [navButton].
+     */
+    fun featuredNavButton(
+        canvas: EditorCanvas, r: Rect, title: String, subtitle: String, badgeText: String,
+        linkRect: Rect, linkLabel: String, hover: Boolean, hoverLink: Boolean,
+    ): Rect {
+        val brand = SnellPalette.discord
+        // glow (fake box-shadow): offset translucent fills beneath the card
+        canvas.fill(r.left + 4, r.bottom, r.width - 8, 4, SnellPalette.withAlpha(brand, 0x33))
+        canvas.fill(r.left + 8, r.bottom + 2, r.width - 16, 3, SnellPalette.withAlpha(brand, 0x1E))
+        // gradient bg (≈100°): brighter on hover
+        gradientHApprox(canvas, r, SnellPalette.withAlpha(brand, if (hover) 0x52 else 0x42), SnellPalette.withAlpha(brand, 0x12))
+        canvas.border(r.left, r.top, r.width, r.height, SnellPalette.withAlpha(brand, if (hover) 0x8C else 0x73))
+        round(canvas, r, SnellPalette.menuPanel)
+        // solid icon tile with a faint glow ring
+        val tile = r.height - 14
+        val tileRect = Rect(r.left + 8, r.top + (r.height - tile) / 2, tile, tile)
+        canvas.fill(tileRect.left - 1, tileRect.top - 1, tileRect.width + 2, tileRect.height + 2, SnellPalette.withAlpha(brand, 0x55))
+        iconTile(canvas, tileRect, brand, lighten(brand, 0.2f))
+        // title + REWARDS badge over a muted subtitle
+        val tx = tileRect.right + 10
+        val block = canvas.lineHeight * 2 + 3
+        val ty = r.top + (r.height - block) / 2
+        val badgeW = if (badgeText.isEmpty()) 0 else canvas.textWidth(badgeText) + 16
+        val titleMax = (linkRect.left - 10 - tx - badgeW).coerceAtLeast(20)
+        val shownTitle = ellipsize(canvas, title, titleMax)
+        canvas.drawText(tx, ty, shownTitle, SnellPalette.text)
+        if (badgeText.isNotEmpty()) badge(canvas, tx + canvas.textWidth(shownTitle) + 6, ty - 1, badgeText, brand)
+        canvas.drawText(tx, ty + canvas.lineHeight + 3, ellipsize(canvas, subtitle, linkRect.left - 10 - tx), SnellPalette.text2)
+        solidButton(canvas, linkRect, linkLabel, brand, WHITE, hoverLink, "chevron")
         return tileRect
     }
 
@@ -399,12 +512,24 @@ object SnellUi {
         canvas.fill(x, thumbY, 3, thumbH, SnellPalette.withAlpha(SnellPalette.accent, 0xAA))
     }
 
+    private const val DISPLAY_SIZE = 62f // must equal the `size` in assets/snell/font/display.json
+
     /**
-     * A larger screen heading, scaled up from the fixed game font. ([x],[y]) is the top-left of
-     * the scaled text; `withScale` makes the pivot the local origin, so the body draws at (0,0).
-     * The unscaled width is `textWidth(text)`; multiply by [scale] to centre.
+     * A crisp display heading (the SNELL wordmark). Renders the large native Geist display font scaled
+     * DOWN to [pixelHeight] (downscaling stays sharp, unlike upscaling the 11px atlas) and inserts
+     * manual letter-spacing per glyph (MC has no per-glyph tracking). ([x],[y]) is the top-left.
      */
-    fun heading(canvas: EditorCanvas, x: Int, y: Int, text: String, scale: Float = 1.6f, color: Int = SnellPalette.text) {
-        canvas.withScale(scale, x, y) { canvas.drawText(0, 0, text, color) }
+    fun heading(canvas: EditorCanvas, x: Int, y: Int, text: String, pixelHeight: Int = 24, color: Int = SnellPalette.text, letterSpacingEm: Float = 0.16f) {
+        val scale = pixelHeight / DISPLAY_SIZE
+        val gap = (letterSpacingEm * DISPLAY_SIZE).toInt() // native-px spacing, scaled down with the glyphs
+        canvas.withScale(scale, x, y) {
+            var cx = 0
+            for (ch in text) {
+                val s = ch.toString()
+                canvas.drawDisplay(cx, 0, s, color)
+                cx += canvas.displayWidth(s) + gap
+            }
+        }
     }
+
 }

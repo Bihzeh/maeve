@@ -74,15 +74,14 @@ object SnellUi {
         if (border != null) canvas.sprite("snell:shape/rrect_sm_outline", r.left, r.top, r.width, r.height, border)
     }
 
-    /** A full-capsule surface (wallet pill, status pills, switch track): [fill] + optional 1px [border] ring. */
-    fun capsule(canvas: EditorCanvas, r: Rect, fill: Int, border: Int? = null) {
-        if (border != null) {
-            canvas.sprite("snell:shape/pill", r.left, r.top, r.width, r.height, border)
-            canvas.sprite("snell:shape/pill", r.left + 1, r.top + 1, r.width - 2, r.height - 2, fill)
-        } else {
-            canvas.sprite("snell:shape/pill", r.left, r.top, r.width, r.height, fill)
-        }
-    }
+    /**
+     * A pill-ish surface (wallet pill, status pills, switch track): [fill] + optional [border] ring.
+     * Uses the radius-6 rrect 9-slice rather than the full-capsule `pill` master, because that master is
+     * a fixed 20px-tall border-10 sprite that 9-slices into garbage when drawn at any other height
+     * (it rendered the wallet pill as a maroon block). Radius 6 reads as a rounded pill at any size.
+     */
+    fun capsule(canvas: EditorCanvas, r: Rect, fill: Int, border: Int? = null) =
+        surface(canvas, r, fill, border)
 
     // ---- tiny vector glyphs (the fixed game font has no icon set) ------------------------------
 

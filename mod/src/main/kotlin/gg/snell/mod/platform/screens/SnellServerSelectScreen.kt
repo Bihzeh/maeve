@@ -1,20 +1,25 @@
 package gg.snell.mod.platform.screens
 
 import gg.snell.mod.menu.ServerRow
-import gg.snell.mod.menu.ServerSelectLayout
-import gg.snell.mod.menu.ServerSelectRenderer
+import gg.snell.mod.menu.ServerState
+import gg.snell.mod.menu.ServerView
 import gg.snell.mod.platform.EditorCanvas
 import gg.snell.mod.platform.SnellMenuScreen
 import gg.snell.mod.platform.SnellMenus
+import gg.snell.mod.ui.node.Layout
+import gg.snell.mod.ui.node.Node
+import gg.snell.mod.ui.node.asMetrics
+import gg.snell.mod.ui.node.hit
+import gg.snell.mod.ui.node.render
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.TitleScreen
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen
 import net.minecraft.network.chat.Component
 
 /**
- * Bespoke multiplayer server picker. Renders the Snell card and delegates to vanilla via
- * [ServerAdapter] (list + live ping + join). Add / Edit / Direct Connect have no standalone screens in
- * 26.1.2, so they hand off to vanilla's JoinMultiplayerScreen via a one-shot swap bypass.
+ * Bespoke multiplayer server picker. Builds the [ServerView] node tree per frame (810-tall design
+ * space) and delegates to vanilla via [ServerAdapter] (list + live ping + join). Add / Edit / Direct
+ * Connect hand off to vanilla's JoinMultiplayerScreen via a one-shot swap bypass.
  */
 class SnellServerSelectScreen(private val parent: Screen?) : SnellMenuScreen(Component.literal("Multiplayer")) {
     private val adapter = ServerAdapter(mc)
@@ -22,6 +27,9 @@ class SnellServerSelectScreen(private val parent: Screen?) : SnellMenuScreen(Com
     private var selected = -1
     private var scrollY = 0
     private var started = false
+    private var laid: Node? = null
+
+    override val designH: Int get() = 810
 
     override fun init() {
         super.init()
@@ -34,19 +42,22 @@ class SnellServerSelectScreen(private val parent: Screen?) : SnellMenuScreen(Com
         rows = adapter.rows()
     }
 
-    override fun draw(canvas: EditorCanvas, mouseX: Int, mouseY: Int) =
-        ServerSelectRenderer.render(canvas, designW, designH, mouseX, mouseY, rows, selected, scrollY)
+    override fun draw(canvas: EditorCanvas, mouseX: Int, mouseY: Int) {
+        val t = ServerView.build(ServerState(rows, selected, scrollY))
+        Layout.layout(t, designW, designH, canvas.asMetrics())
+        t.render(canvas, mouseX, mouseY)
+        laid = t
+    }
 
-    override fun hitId(mouseX: Int, mouseY: Int): String? = ServerSelectLayout.hit(designW, designH, mouseX, mouseY)
+    override fun hitId(mouseX: Int, mouseY: Int): String? =
+        laid?.hit(mouseX, mouseY)?.takeUnless { it.startsWith("row:") || it == "list" }
 
     override fun onPress(mouseX: Int, mouseY: Int, doubled: Boolean): Boolean {
-        val i = ServerSelectLayout.rowAt(designW, designH, scrollY, rows.size, mouseX, mouseY)
-        if (i >= 0) {
-            selected = i
-            if (doubled) joinSelected()
-            return true
-        }
-        return false
+        val id = laid?.hit(mouseX, mouseY) ?: return false
+        if (!id.startsWith("row:")) return false
+        selected = id.removePrefix("row:").toIntOrNull() ?: return false
+        if (doubled) joinSelected()
+        return true
     }
 
     override fun onActivate(id: String) {
@@ -59,7 +70,8 @@ class SnellServerSelectScreen(private val parent: Screen?) : SnellMenuScreen(Com
     }
 
     override fun onScroll(amount: Double) {
-        scrollY = (scrollY - (amount * 16).toInt()).coerceIn(0, ServerSelectLayout.maxScroll(rows.size, designW, designH))
+        scrollY = (scrollY - (amount * 24).toInt())
+            .coerceIn(0, laid?.let { ServerView.maxScroll(it, rows.size) } ?: 0)
     }
 
     private fun joinSelected() {

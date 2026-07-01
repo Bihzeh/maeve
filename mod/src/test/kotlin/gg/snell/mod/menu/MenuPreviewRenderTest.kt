@@ -78,7 +78,10 @@ class MenuPreviewRenderTest {
             val p = id.split(":", limit = 2); if (p.size != 2) return
             val res = "assets/${p[0]}/textures/gui/sprites/${p[1]}.png"
             val img = javaClass.classLoader.getResourceAsStream(res)?.use { ImageIO.read(it) } ?: return
-            // white master × ARGB tint (mirrors the in-game GUI shader); stretch-draw (9-slice TODO in preview)
+            // white master × ARGB tint (mirrors the in-game GUI shader); stretch-draw (9-slice TODO in
+            // preview). A pure-white tint means "as authored" — skip it so coloured sprites (the brand
+            // mark) keep their own pixels instead of being silhouetted white.
+            if (tint == 0xFFFFFFFF.toInt()) { g.drawImage(img, x, y, w, h, null); return }
             val tinted = BufferedImage(img.width, img.height, BufferedImage.TYPE_INT_ARGB)
             tinted.createGraphics().apply {
                 drawImage(img, 0, 0, null)
@@ -160,7 +163,7 @@ class MenuPreviewRenderTest {
     }
 
     @Test fun `render world picker`() {
-        val w = 520; val h = 360
+        val w = 1440; val h = 810 // the pickers' 810-tall design space
         val (img, canvas) = worldFrame(w, h)
         SnellUi.backdrop(canvas, w, h)
         val rows = listOf(
@@ -170,12 +173,14 @@ class MenuPreviewRenderTest {
             WorldRow("SkyBlock", "sb", "Survival", "1.20.4 · last week", "640 MB"),
             WorldRow("Old Base", "old", "Survival", "1.19 · 2 months ago", "1.4 GB"),
         )
-        WorldSelectRenderer.render(canvas, w, h, -1, -1, rows, selected = 0, scrollY = 0, search = "", searchFocused = false)
+        val t = WorldView.build(WorldState(rows, selected = 0))
+        Layout.layout(t, w, h, canvas.asMetrics())
+        t.render(canvas, -1, -1)
         assertTrue(write(img, "03-world.png").length() > 0)
     }
 
     @Test fun `render server picker`() {
-        val w = 520; val h = 360
+        val w = 1440; val h = 810
         val (img, canvas) = worldFrame(w, h)
         SnellUi.backdrop(canvas, w, h)
         val rows = listOf(
@@ -185,12 +190,14 @@ class MenuPreviewRenderTest {
             ServerRow("Old Server", "dead.example.net", "Can't connect to server", "", -1, ServerStatus.Offline),
             ServerRow("Resolving", "new.example.net", "", "", -1, ServerStatus.Pinging),
         )
-        ServerSelectRenderer.render(canvas, w, h, -1, -1, rows, selected = 0, scrollY = 0)
+        val t = ServerView.build(ServerState(rows, selected = 0))
+        Layout.layout(t, w, h, canvas.asMetrics())
+        t.render(canvas, -1, -1)
         assertTrue(write(img, "04-server.png").length() > 0)
     }
 
     @Test fun `render options screen`() {
-        val w = 520; val h = 360
+        val w = 1440; val h = 810
         val (img, canvas) = frame(w, h)
         SnellUi.backdrop(canvas, w, h)
         val entries = listOf(
@@ -204,7 +211,9 @@ class MenuPreviewRenderTest {
             OptionEntry.Item(OptionItem("vsync", "VSync", OptionKind.Toggle, "", on = true)),
             OptionEntry.Item(OptionItem("smooth", "Smooth Lighting", OptionKind.Toggle, "", on = true)),
         )
-        OptionsRenderer.render(canvas, w, h, -1, -1, entries, activeCategory = "video", scrollY = 0)
+        val t = OptionsView.build(OptionsState(entries, category = "video"))
+        Layout.layout(t, w, h, canvas.asMetrics())
+        t.render(canvas, -1, -1)
         assertTrue(write(img, "05-options.png").length() > 0)
     }
 }

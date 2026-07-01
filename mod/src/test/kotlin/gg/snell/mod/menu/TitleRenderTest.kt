@@ -42,13 +42,14 @@ class TitleRenderTest {
         }
 
         override fun drawTexture(id: String, x: Int, y: Int, w: Int, h: Int) { textures += id }
+        val sprites = mutableListOf<String>()
         override fun fill(x: Int, y: Int, w: Int, h: Int, color: Int) {}
         override fun border(x: Int, y: Int, w: Int, h: Int, color: Int) {}
         override fun gradientV(x: Int, y: Int, w: Int, h: Int, top: Int, bottom: Int) {}
         override fun overlayStratum() {}
         override fun drawIcon(glyph: Char, x: Int, y: Int, color: Int) {}
         override fun iconWidth(glyph: Char) = 8
-        override fun sprite(id: String, x: Int, y: Int, w: Int, h: Int, tint: Int) {}
+        override fun sprite(id: String, x: Int, y: Int, w: Int, h: Int, tint: Int) { sprites += id }
         override fun textWidth(text: String) = text.length * 6
         override fun monoWidth(text: String) = text.length * 6
         override fun displayWidth(text: String) = text.length * 40
@@ -70,7 +71,9 @@ class TitleRenderTest {
     @Test fun `wordmark is the logo alone - no display lettering`() {
         val (_, c) = rendered()
         assertTrue(c.calls.none { it.kind == "display" }, "no wordmark lettering, logo only")
-        assertTrue(c.textures.any { it.contains("snell_mark") }, "slipstream mark drawn")
+        // The mark must go through the GUI-atlas sprite path — extractor.blit (drawTexture) renders
+        // nothing in 26.2, which is why the logo was missing in-game while the AWT preview showed it.
+        assertTrue(c.sprites.any { it == "snell:brand/mark" }, "slipstream mark drawn as an atlas sprite")
     }
 
     @Test fun `account chip drops the status line and centres the username`() {

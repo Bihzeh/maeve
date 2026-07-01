@@ -1,24 +1,32 @@
 package gg.snell.mod.platform.screens
 
 import gg.snell.mod.menu.WorldRow
-import gg.snell.mod.menu.WorldSelectLayout
-import gg.snell.mod.menu.WorldSelectRenderer
+import gg.snell.mod.menu.WorldState
+import gg.snell.mod.menu.WorldView
 import gg.snell.mod.platform.EditorCanvas
 import gg.snell.mod.platform.SnellMenuScreen
+import gg.snell.mod.ui.node.Layout
+import gg.snell.mod.ui.node.Node
+import gg.snell.mod.ui.node.asMetrics
+import gg.snell.mod.ui.node.hit
+import gg.snell.mod.ui.node.render
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.TitleScreen
 import net.minecraft.network.chat.Component
 
 /**
- * Bespoke singleplayer world picker. Renders the Snell card and delegates every action to vanilla via
- * [WorldAdapter] (load summaries / play / create / edit / delete). Single-click selects a row,
- * double-click or "Play" loads it.
+ * Bespoke singleplayer world picker. Builds the [WorldView] node tree per frame (810-tall design
+ * space) and delegates every action to vanilla via [WorldAdapter] (load summaries / play / create /
+ * edit / delete). Single-click selects a row, double-click or "Play" loads it.
  */
 class SnellWorldSelectScreen(private val parent: Screen?) : SnellMenuScreen(Component.literal("Singleplayer")) {
     private var rows: List<WorldRow> = emptyList()
     private var selected = -1
     private var scrollY = 0
     private var loaded = false
+    private var laid: Node? = null
+
+    override val designH: Int get() = 810
 
     override fun init() {
         super.init()
@@ -28,19 +36,23 @@ class SnellWorldSelectScreen(private val parent: Screen?) : SnellMenuScreen(Comp
         }
     }
 
-    override fun draw(canvas: EditorCanvas, mouseX: Int, mouseY: Int) =
-        WorldSelectRenderer.render(canvas, designW, designH, mouseX, mouseY, rows, selected, scrollY, "", false)
+    override fun draw(canvas: EditorCanvas, mouseX: Int, mouseY: Int) {
+        val t = WorldView.build(WorldState(rows, selected, scrollY))
+        Layout.layout(t, designW, designH, canvas.asMetrics())
+        t.render(canvas, mouseX, mouseY)
+        laid = t
+    }
 
-    override fun hitId(mouseX: Int, mouseY: Int): String? = WorldSelectLayout.hit(designW, designH, mouseX, mouseY)
+    // Rows go through onPress (select vs play); everything else is a plain activate id.
+    override fun hitId(mouseX: Int, mouseY: Int): String? =
+        laid?.hit(mouseX, mouseY)?.takeUnless { it.startsWith("row:") || it == "list" || it == "search" }
 
     override fun onPress(mouseX: Int, mouseY: Int, doubled: Boolean): Boolean {
-        val i = WorldSelectLayout.rowAt(designW, designH, scrollY, rows.size, mouseX, mouseY)
-        if (i >= 0) {
-            selected = i
-            if (doubled) playSelected()
-            return true
-        }
-        return false
+        val id = laid?.hit(mouseX, mouseY) ?: return false
+        if (!id.startsWith("row:")) return false
+        selected = id.removePrefix("row:").toIntOrNull() ?: return false
+        if (doubled) playSelected()
+        return true
     }
 
     override fun onActivate(id: String) {
@@ -54,10 +66,13 @@ class SnellWorldSelectScreen(private val parent: Screen?) : SnellMenuScreen(Comp
     }
 
     override fun onScroll(amount: Double) {
-        scrollY = (scrollY - (amount * 16).toInt()).coerceIn(0, WorldSelectLayout.maxScroll(rows.size, designW, designH))
+        scrollY -= (amount * 24).toInt()
+        clampScroll()
     }
 
-    private fun clampScroll() { scrollY = scrollY.coerceIn(0, WorldSelectLayout.maxScroll(rows.size, designW, designH)) }
+    private fun clampScroll() {
+        scrollY = scrollY.coerceIn(0, laid?.let { WorldView.maxScroll(it, rows.size) } ?: 0)
+    }
 
     private fun playSelected() {
         rows.getOrNull(selected)?.let { WorldAdapter.play(mc, it.folder) { mc.setScreenAndShow(this) } }

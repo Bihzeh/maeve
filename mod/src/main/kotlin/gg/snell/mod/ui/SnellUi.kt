@@ -161,7 +161,10 @@ object SnellUi {
         canvas.sprite("snell:icon/$name", cx - size / 2, cy - size / 2, size, size, color)
     }
 
-    private const val SLIPSTREAM_TEX = "snell:textures/gui/snell_mark.png"
+    // The brand mark ships as a GUI-atlas sprite (assets/.../gui/sprites/brand/mark.png): the atlas
+    // blitSprite path is the one texture path proven to render in 26.2 — extractor.blit(Identifier)
+    // (the old drawTexture route) silently draws nothing in-game, which kept the logo invisible.
+    private const val MARK_SPRITE = "snell:brand/mark"
 
     /**
      * The Snell slipstream brand mark — blitted from the bundled cyan texture (both the runtime
@@ -173,7 +176,7 @@ object SnellUi {
     fun slipstream(canvas: EditorCanvas, x: Int, y: Int, size: Int, color: Int = SnellPalette.accent) {
         val box = (size * 1.35f).toInt()
         val off = (box - size) / 2
-        canvas.drawTexture(SLIPSTREAM_TEX, x - off, y - off, box, box)
+        canvas.sprite(MARK_SPRITE, x - off, y - off, box, box)
     }
 
     // Measured alpha bounding box of snell_mark.png (256×256): ink spans x 39..216, y 75..180.
@@ -192,7 +195,7 @@ object SnellUi {
         val box = (inkHeight * MARK_TEX_SIZE / MARK_INK_H).toInt()
         val bx = x - (box * MARK_INK_X / MARK_TEX_SIZE).toInt()
         val by = y - (box * MARK_INK_Y / MARK_TEX_SIZE).toInt()
-        canvas.drawTexture(SLIPSTREAM_TEX, bx, by, box, box)
+        canvas.sprite(MARK_SPRITE, bx, by, box, box)
         return (inkHeight * MARK_INK_W / MARK_INK_H).toInt()
     }
 

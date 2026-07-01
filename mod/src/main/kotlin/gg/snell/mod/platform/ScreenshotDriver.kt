@@ -1,5 +1,8 @@
 package gg.snell.mod.platform
 
+import gg.snell.mod.menu.ServerRow
+import gg.snell.mod.menu.ServerStatus
+import gg.snell.mod.menu.WorldRow
 import gg.snell.mod.platform.screens.SnellOptionsScreen
 import gg.snell.mod.platform.screens.SnellPauseScreen
 import gg.snell.mod.platform.screens.SnellServerSelectScreen
@@ -25,18 +28,23 @@ import java.nio.file.Path
 object ScreenshotDriver {
 
     // Title/World/Server/Options render fine with no world loaded (adapters load async, draw empty then
-    // fill). Pause renders standalone here (painted dusk backdrop, not the blurred world) — a faithful
+    // fill; in shot mode the pickers show [ShotSeed] demo rows so the lists are captured populated).
+    // Pause renders standalone here (painted dusk backdrop, not the blurred world) — a faithful
     // world-backed pause shot is a later phase.
     private val shots: List<Pair<String, () -> Screen>> = listOf(
         "title" to { SnellTitleScreen() },
         "world" to { SnellWorldSelectScreen(null) },
         "server" to { SnellServerSelectScreen(null) },
         "options" to { SnellOptionsScreen(null) },
+        "options-controls" to { SnellOptionsScreen(null, initialCategory = "controls") },
+        "options-audio" to { SnellOptionsScreen(null, initialCategory = "audio") },
+        "options-mods" to { SnellOptionsScreen(null, initialCategory = "mods") },
         "pause" to { SnellPauseScreen() },
     )
 
     fun install(outDir: Path) {
         Files.createDirectories(outDir)
+        SnellMenus.shotSeed = true
         var warmup = 60        // ~3s after load: let the always-on Geist pack + atlases settle
         var idx = -1
         var waitFrames = 0
@@ -58,6 +66,25 @@ object ScreenshotDriver {
                 mc.setScreenAndShow(shots[idx].second())
                 waitFrames = 8 // render several frames before grabbing
             },
+        )
+    }
+
+    /** Demo rows the pickers show under [SnellMenus.shotSeed], covering selected/hover-less states,
+     *  every mode pill colour, and every server status (online w/ ping tiers, offline, pinging). */
+    object ShotSeed {
+        val worlds = listOf(
+            WorldRow("New World", "new-world", "Survival", "26.2 · 2 minutes ago", "2.1 GB"),
+            WorldRow("Hardcore Attempt 4", "hardcore-4", "Hardcore", "26.2 · yesterday", "880 MB"),
+            WorldRow("Creative Flat", "flat-1", "Creative", "26.2 · 3 days ago", "120 MB"),
+            WorldRow("SkyBlock with an Extremely Long World Name That Ellipsizes", "sb", "Survival", "25.4 · last week", "640 MB"),
+            WorldRow("Old Base", "old", "Spectator", "24.6 · 2 months ago", "1.4 GB"),
+        )
+        val servers = listOf(
+            ServerRow("Hypixel", "mc.hypixel.net", "Bedwars · SkyBlock · 30+ minigames", "84231/100000", 23, ServerStatus.Online),
+            ServerRow("CubeCraft", "play.cubecraft.net", "Lucky Islands · EggWars", "12044/40000", 95, ServerStatus.Online),
+            ServerRow("My SMP", "smp.example.net", "Private survival realm", "3/20", 210, ServerStatus.Online),
+            ServerRow("Old Server", "dead.example.net", "Can't connect to server", "", -1, ServerStatus.Offline),
+            ServerRow("Resolving", "new.example.net", "", "", -1, ServerStatus.Pinging),
         )
     }
 

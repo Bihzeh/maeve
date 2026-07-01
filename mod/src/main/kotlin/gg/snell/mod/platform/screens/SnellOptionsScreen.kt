@@ -29,9 +29,10 @@ import net.minecraft.network.chat.Component
 class SnellOptionsScreen(
     private val parent: Screen?,
     private val modules: ModuleManager? = SnellMenus.modules,
+    initialCategory: String = "video",
 ) : SnellMenuScreen(Component.literal("Options")) {
 
-    private var category = "video"
+    private var category = initialCategory
     private var entries: List<OptionEntry> = emptyList()
     private var scrollY = 0
     private var sliderDrag: String? = null

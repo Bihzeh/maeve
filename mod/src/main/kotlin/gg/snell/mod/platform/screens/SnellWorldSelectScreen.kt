@@ -4,7 +4,9 @@ import gg.snell.mod.menu.WorldRow
 import gg.snell.mod.menu.WorldState
 import gg.snell.mod.menu.WorldView
 import gg.snell.mod.platform.EditorCanvas
+import gg.snell.mod.platform.ScreenshotDriver
 import gg.snell.mod.platform.SnellMenuScreen
+import gg.snell.mod.platform.SnellMenus
 import gg.snell.mod.ui.node.Layout
 import gg.snell.mod.ui.node.Node
 import gg.snell.mod.ui.node.asMetrics
@@ -32,7 +34,12 @@ class SnellWorldSelectScreen(private val parent: Screen?) : SnellMenuScreen(Comp
         super.init()
         if (!loaded) {
             loaded = true
-            WorldAdapter.load(mc) { rows = it; clampScroll() }
+            if (SnellMenus.shotSeed) { // screenshot harness: capture a populated, selected list
+                rows = ScreenshotDriver.ShotSeed.worlds
+                selected = 0
+            } else {
+                WorldAdapter.load(mc) { rows = it; clampScroll() }
+            }
         }
     }
 

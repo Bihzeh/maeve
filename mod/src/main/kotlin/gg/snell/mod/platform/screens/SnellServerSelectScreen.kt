@@ -4,6 +4,7 @@ import gg.snell.mod.menu.ServerRow
 import gg.snell.mod.menu.ServerState
 import gg.snell.mod.menu.ServerView
 import gg.snell.mod.platform.EditorCanvas
+import gg.snell.mod.platform.ScreenshotDriver
 import gg.snell.mod.platform.SnellMenuScreen
 import gg.snell.mod.platform.SnellMenus
 import gg.snell.mod.ui.node.Layout
@@ -33,11 +34,17 @@ class SnellServerSelectScreen(private val parent: Screen?) : SnellMenuScreen(Com
 
     override fun init() {
         super.init()
+        if (SnellMenus.shotSeed) { // screenshot harness: capture a populated, selected list
+            rows = ScreenshotDriver.ShotSeed.servers
+            selected = 0
+            return
+        }
         if (!started) { started = true; adapter.pingAll() }
         rows = adapter.rows()
     }
 
     override fun tick() {
+        if (SnellMenus.shotSeed) return
         adapter.tick()
         rows = adapter.rows()
     }

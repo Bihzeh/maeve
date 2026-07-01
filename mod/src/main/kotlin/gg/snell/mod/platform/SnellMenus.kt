@@ -16,6 +16,11 @@ object SnellMenus {
     @Volatile
     var bypassNext: Boolean = false
 
+    /** Shot-mode only: pickers show [ShotSeed] demo rows instead of the (empty CI) real adapters, so
+     *  the screenshot harness captures populated lists. Set by [ScreenshotDriver.install]. */
+    @Volatile
+    var shotSeed: Boolean = false
+
     /** Set once at init so bespoke screens (the Options "Mods" tab) can reach the live module list. */
     @Volatile
     var modules: ModuleManager? = null

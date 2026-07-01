@@ -61,11 +61,8 @@ object TitleView {
 
     private fun wordmark() = Node(
         height = Len.Fixed(46),
-        paint = { c, r, _, _ ->
-            SnellUi.slipstream(c, r.left, r.top, r.height)
-            val px = (r.height * 0.78f).toInt()
-            SnellUi.heading(c, r.left + r.height + 12, r.top + (r.height - px) / 2, "SNELL", pixelHeight = px)
-        },
+        // Logo-only lockup (no lettering): the slipstream mark's ink fills the row height.
+        paint = { c, r, _, _ -> SnellUi.logo(c, r.left, r.top, r.height) },
     )
 
     /** Featured Discord card as a subtree so the layout engine sizes title vs badge vs link (no hand-math collision). */
@@ -136,13 +133,20 @@ object TitleView {
     )
 
     // ---- top-right cluster --------------------------------------------------------------------
+    // Mockup ×0.75: wallet/squares 35 tall; the account chip is taller (60px → 45) and hugs its
+    // avatar + username, so the row is 45 tall with the smaller controls centred against the chip.
     private fun topActions(d: TitleData) = Node(
-        anchor = Anchor.TopRight, dir = Dir.Row, gap = 9, cross = Cross.Center, height = Len.Fixed(35),
+        anchor = Anchor.TopRight, dir = Dir.Row, gap = 9, cross = Cross.Center, height = Len.Fixed(45),
         children = listOf(
             Node(id = "wallet", width = Len.Fixed(62), height = Len.Fixed(35), paint = { c, r, mx, my -> SnellUi.walletPill(c, r, d.crowns, r.contains(mx, my)) }),
             squareAction("cosmetics"),
             squareAction("friends"),
-            Node(width = Len.Fixed(150), height = Len.Fixed(35), paint = { c, r, _, _ -> accountChip(c, r, d.username, d.status) }),
+            Node(
+                id = "account", height = Len.Fixed(45),
+                // Hug the content: 5px pad · 35px avatar · 8px gap · name · 12px right pad.
+                measure = { m -> gg.snell.mod.editor.Size(60 + m.textWidth(d.username), 45) },
+                paint = { c, r, _, _ -> accountChip(c, r, d.username, d.status) },
+            ),
         ),
     )
 
@@ -154,20 +158,24 @@ object TitleView {
         },
     )
 
+    /**
+     * Account chip per the design: avatar + a single vertically-centred username (no status text);
+     * presence is just the coloured dot riding the avatar's bottom-right corner.
+     */
     private fun accountChip(c: gg.snell.mod.platform.EditorCanvas, r: Rect, username: String, status: String) {
         SnellUi.surface(c, r, SnellUi.rowFill, SnellUi.rowBorder)
-        val sk = r.height - 8
-        val avatar = Rect(r.left + 4, r.top + 4, sk, sk)
+        val avatar = Rect(r.left + 5, r.top + 5, r.height - 10, r.height - 10)
         SnellUi.surface(c, avatar, SnellPalette.menuInset, SnellPalette.outline)
         val initial = username.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
         c.drawText(avatar.left + (avatar.width - c.textWidth(initial)) / 2, avatar.top + (avatar.height - c.lineHeight) / 2 + 1, initial, SnellPalette.accent)
-        val sc = SnellUi.statusColor(status)
-        SnellUi.dot(c, avatar.right - 2, avatar.bottom - 2, 7, SnellPalette.menuPanel)
-        SnellUi.dot(c, avatar.right - 2, avatar.bottom - 2, 5, sc)
-        val tx = avatar.right + 7
-        val maxW = r.right - 7 - tx
-        c.drawText(tx, r.top + 6, SnellUi.ellipsize(c, username, maxW), SnellPalette.text)
-        c.drawText(tx, r.top + 6 + c.lineHeight, SnellUi.ellipsize(c, status, maxW), sc)
+        // Status dot on the avatar corner (mockup: 13px dot w/ dark ring at -3px → ×0.75), rounded
+        // via the rrect 9-slice so it reads as a dot, not a square.
+        val cx = avatar.right - 2
+        val cy = avatar.bottom - 2
+        SnellUi.surface(c, Rect(cx - 7, cy - 7, 14, 14), SnellPalette.menuPanel)
+        SnellUi.surface(c, Rect(cx - 5, cy - 5, 10, 10), SnellUi.statusColor(status))
+        val tx = avatar.right + 8
+        c.drawText(tx, r.top + (r.height - c.lineHeight) / 2, SnellUi.ellipsize(c, username, r.right - 12 - tx), SnellPalette.text)
     }
 
     // ---- bottom-right / bottom-left -----------------------------------------------------------

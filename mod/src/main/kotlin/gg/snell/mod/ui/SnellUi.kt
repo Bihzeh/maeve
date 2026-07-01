@@ -176,6 +176,26 @@ object SnellUi {
         canvas.drawTexture(SLIPSTREAM_TEX, x - off, y - off, box, box)
     }
 
+    // Measured alpha bounding box of snell_mark.png (256×256): ink spans x 39..216, y 75..180.
+    private const val MARK_TEX_SIZE = 256f
+    private const val MARK_INK_X = 39f
+    private const val MARK_INK_Y = 75f
+    private const val MARK_INK_W = 178f
+    private const val MARK_INK_H = 106f
+
+    /**
+     * The slipstream mark as a standalone logo: draws the texture so its INK box (not the padded
+     * texture) sits with its top-left at ([x],[y]) and is exactly [inkHeight] px tall. Returns the
+     * ink width, for flowing content after the logo.
+     */
+    fun logo(canvas: EditorCanvas, x: Int, y: Int, inkHeight: Int): Int {
+        val box = (inkHeight * MARK_TEX_SIZE / MARK_INK_H).toInt()
+        val bx = x - (box * MARK_INK_X / MARK_TEX_SIZE).toInt()
+        val by = y - (box * MARK_INK_Y / MARK_TEX_SIZE).toInt()
+        canvas.drawTexture(SLIPSTREAM_TEX, bx, by, box, box)
+        return (inkHeight * MARK_INK_W / MARK_INK_H).toInt()
+    }
+
     /** Presence colour: green online / gold away / red offline. */
     fun statusColor(status: String): Int = when (status.lowercase()) {
         "online" -> SnellPalette.success
@@ -290,12 +310,12 @@ object SnellUi {
         val tileRect = Rect(r.left + 7, r.top + (r.height - tile) / 2, tile, tile)
         iconTile(canvas, tileRect, SnellPalette.withAlpha(tileColor, 0x22), SnellPalette.withAlpha(tileColor, 0x55))
         val tx = tileRect.right + 9
-        val block = canvas.lineHeight * 2 + 2
+        val block = canvas.lineHeight * 2 + 4
         // MC text ink rides in the upper part of its line box, so a purely geometric centre reads
         // top-heavy; nudge the two-line block down to optically centre it against the icon tile.
         val ty = r.top + (r.height - block) / 2 + 2
         canvas.drawText(tx, ty, ellipsize(canvas, title, r.right - 22 - tx), SnellPalette.text)
-        canvas.drawText(tx, ty + canvas.lineHeight + 2, ellipsize(canvas, subtitle, r.right - 22 - tx), SnellPalette.text2)
+        canvas.drawText(tx, ty + canvas.lineHeight + 4, ellipsize(canvas, subtitle, r.right - 22 - tx), SnellPalette.text2)
         chevronRight(canvas, r.right - 12, r.top + r.height / 2, 3, SnellPalette.menuText3)
         return tileRect
     }
